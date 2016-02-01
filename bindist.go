@@ -4,6 +4,7 @@ import (
       "os"
       "fmt"
       "flag"
+      "encoding/hex"
    )
 
 var magic1 string
@@ -22,6 +23,12 @@ func main() {
       os.Exit(0)
    }
 
+   byteArray1 := []byte(magic1)
+   byteArray2 := []byte(magic2)
    fmt.Println(magic1)
    fmt.Println(magic2)
+   fmt.Println(byteArray1)
+   fmt.Println(byteArray2)
+   fmt.Println(hex.EncodeToString(byteArray1))
+   fmt.Println(hex.EncodeToString(byteArray2))
 }
