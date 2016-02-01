@@ -4,6 +4,7 @@ import (
       "os"
       "fmt"
       "flag"
+      "regexp"
       "encoding/hex"
    )
 
@@ -31,4 +32,35 @@ func main() {
    fmt.Println(byteArray2)
    fmt.Println(hex.EncodeToString(byteArray1))
    fmt.Println(hex.EncodeToString(byteArray2))
+
+   res, _ := regexp.MatchString("^[A-Fa-f\\d]+$", magic1)
+   if res == false {
+      fmt.Println("INFO: Magic number one is not hexadecimal.")
+      os.Exit(1)
+   } else {
+      if len(magic1) % 2 != 0 {
+         fmt.Println("INFO: Magic number two contains uneven character count.")
+         os.Exit(1)         
+      }
+   }
+
+   res, _ = regexp.MatchString("^[A-Fa-f\\d]+$", magic2)
+   if res == false {
+      fmt.Println("INFO: Magic number two is not hexadecimal.")
+      os.Exit(1)
+   } else {
+      if len(magic2) % 2 != 0 {
+         fmt.Println("INFO: Magic number two contains uneven character count.")
+         os.Exit(1)         
+      }
+   }
+
+   var magic1len = len(magic1)
+   var x = 0
+   for x = 0; x < magic1len; x+=2 {
+      fmt.Println(magic1[:2])
+      magic1 = magic1[2:]
+      //magic1 = append(magic1[:2], magic1[2+1:]...)
+   }
+
 }
