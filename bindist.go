@@ -10,28 +10,21 @@ import (
 
 var magic1 string
 var magic2 string
+var file string
 
 func init() {
 	flag.StringVar(&magic1, "magic1", "false", "First magic number in a file to begin from, and offset, e.g. magic,offset.")
-   flag.StringVar(&magic2, "magic2", "false", "second magic number in a file to search for, no offset, e.g. magic.")
+   flag.StringVar(&magic2, "magic2", "false", "Second magic number in a file to search for, no offset, e.g. magic.")
+   flag.StringVar(&file, "file", "false", "File to find the distance between.")
 }
 
 func main() {
    flag.Parse()
 
-   if flag.NFlag() <= 1 {    // can access args w/ len(os.Args[1:]) too
+   if flag.NFlag() <= 2 {    // can access args w/ len(os.Args[1:]) too
       flag.Usage()
       os.Exit(0)
    }
-
-   byteArray1 := []byte(magic1)
-   byteArray2 := []byte(magic2)
-   fmt.Println(magic1)
-   fmt.Println(magic2)
-   fmt.Println(byteArray1)
-   fmt.Println(byteArray2)
-   fmt.Println(hex.EncodeToString(byteArray1))
-   fmt.Println(hex.EncodeToString(byteArray2))
 
    var magic1len = len(magic1)
    var magic2len = len(magic2)
@@ -58,11 +51,10 @@ func main() {
       }
    }
 
-   var x = 0
-   for x = 0; x < magic1len; x+=2 {
-      fmt.Println(int(magic1[:2]))
-      magic1 = magic1[2:]
-      //magic1 = append(magic1[:2], magic1[2+1:]...)
-   }
+   byteval1, _ := hex.DecodeString(magic1)
+   fmt.Println(byteval1)
+
+   byteval2, _ := hex.DecodeString(magic2)
+   fmt.Println(byteval2)
 
 }
