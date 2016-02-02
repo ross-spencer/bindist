@@ -5,6 +5,7 @@ import (
       "fmt"
       "flag"
       "regexp"
+      "reflect"
       "encoding/hex"
    )
 
@@ -16,7 +17,7 @@ var file string
 var bfsize int64 = 2048
 
 func init() {
-	flag.StringVar(&magic1, "magic1", "false", "First magic number in a file to begin from, and offset, e.g. magic,offset.")
+   flag.StringVar(&magic1, "magic1", "false", "First magic number in a file to begin from, and offset, e.g. magic,offset.")
    flag.StringVar(&magic2, "magic2", "false", "Second magic number in a file to search for, no offset, e.g. magic.")
    flag.StringVar(&file, "file", "false", "File to find the distance between.")
 }
@@ -29,7 +30,34 @@ func getbfsize(fsize int64, pos int64) int64 {
    return bfsize
 }
 
-func readFile(fp *os.File, fi os.FileInfo) {
+func deletefromslice(n int, slice []byte) []byte {      //return false if no buffer left?
+   for x:=0; x<n; x+=1 {
+      slice = append(slice[:1], slice[1+1:]...)
+   }
+   return slice
+}
+
+func contains(needle []byte, haystack []byte) {
+
+   nlen := len(needle)
+   xlen := len(haystack)
+
+   for x := 0; x < xlen; x+=1 {
+      if reflect.DeepEqual(needle, haystack[:nlen]) {
+         fmt.Println("TRUE ", haystack)
+      }
+      haystack = deletefromslice(nlen, haystack)
+      fmt.Println(haystack)
+   }
+}
+
+func readBytes(buf []byte, byteval1 []byte, byteval2 []byte) bool {
+   contains(byteval1, buf)
+   //reflect.DeepEqual
+   return true
+}
+
+func readFile(fp *os.File, fi os.FileInfo, byteval1 []byte, byteval2 []byte) {
    var eof int64 = fi.Size()
    var pos int64 = 0
 
@@ -37,13 +65,15 @@ func readFile(fp *os.File, fi os.FileInfo) {
    for pos < eof {
       fmt.Println("Buffer required: ", getbfsize(pos, fi.Size()))
 
-      b1 := make([]byte, bfsize)
+      buf := make([]byte, bfsize)
 
-      _, err := fp.Read(b1)
+      _, err := fp.Read(buf)
       if err != nil {
          fmt.Println("ERROR: Error reading bytes: ", err)
          break
       }
+
+      readBytes(buf, byteval1, byteval2)
       //fmt.Printf("%d bytes: %s\n", n1, b1)
 
       //equivalent to ftell() in C
@@ -105,7 +135,7 @@ func main() {
 
    switch mode := fi.Mode(); {
    case mode.IsRegular():
-      readFile(f, fi)
+      readFile(f, fi, byteval1, byteval2)
    default: 
       fmt.Println("INFO: Not a file.")
    }
