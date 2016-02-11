@@ -43,26 +43,22 @@ func contains(needle []byte, haystack []byte) (bool, int) {
    nlen := len(needle)
    xlen := len(haystack)
 
-   offset = 0
+   var offset int = 0
+   var found bool = false
 
-   for x := 0; x < xlen; x+=1 {
-      if len(haystack) > len(needle) { 
-         if reflect.DeepEqual(needle, haystack[:nlen]) {    //check two slices are equal
-            fmt.Println("TRUE ", haystack)
-            break
-         } else {
-            //iterate through haystack comparing two by two...
-            haystack = deletefromslice(nlen, haystack)
-         }
+   for x := 0; x < xlen && found == false; x+=1 {
+      if reflect.DeepEqual(needle, haystack[:nlen]) {    //check two slices are equal
+         found = true
+         fmt.Println(haystack[:nlen])
+         break
+      } else {
+         //iterate through haystack comparing two by two...
+         haystack = deletefromslice(1, haystack)
       }
+      offset+=1
    }
 
-   return 1, true
-}
-
-func readBytes(buf []byte, byteval1 []byte, byteval2 []byte) bool {
-   contains(byteval1, buf)
-   return true
+   return found, offset
 }
 
 func readFile(fp *os.File, fi os.FileInfo, byteval1 []byte, byteval2 []byte) {
@@ -81,12 +77,14 @@ func readFile(fp *os.File, fi os.FileInfo, byteval1 []byte, byteval2 []byte) {
          break
       }
 
-      readBytes(buf, byteval1, byteval2)
-      //fmt.Printf("%d bytes: %s\n", n1, b1)
-
-      //equivalent to ftell() in C
-      pos, _ = fp.Seek(0, os.SEEK_CUR) 
-      
+      found, offset := contains(byteval1, buf)
+      if found == true {
+         fmt.Println("xxx: ", offset)
+         break
+      } else {
+         //equivalent to ftell() in C
+         pos, _ = fp.Seek(0, os.SEEK_CUR) 
+      }
    }
 }
 
