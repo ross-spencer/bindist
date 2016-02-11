@@ -49,7 +49,6 @@ func contains(needle []byte, haystack []byte) (bool, int) {
    for x := 0; x < xlen && found == false; x+=1 {
       if reflect.DeepEqual(needle, haystack[:nlen]) {    //check two slices are equal
          found = true
-         fmt.Println(haystack[:nlen])
          break
       } else {
          //iterate through haystack comparing two by two...
@@ -65,6 +64,12 @@ func readFile(fp *os.File, fi os.FileInfo, byteval1 []byte, byteval2 []byte) {
    var eof int64 = fi.Size()
    var pos int64 = 0
 
+   var found1 = false
+   //var found2 = false
+
+   var tmpoff int = 0
+   var offset1 int = 0
+
    // read file, control how we reach EOF
    for pos < eof {
       fmt.Println("Buffer required: ", getbfsize(pos, fi.Size()))
@@ -78,13 +83,22 @@ func readFile(fp *os.File, fi os.FileInfo, byteval1 []byte, byteval2 []byte) {
       }
 
       found, offset := contains(byteval1, buf)
+      tmpoff += offset
+
       if found == true {
-         fmt.Println("xxx: ", offset)
+         //we don't need to look for byteval1 any more
+         found1 = true
+         offset1 = tmpoff
+         fmt.Println("xxxx: ", offset1)
          break
-      } else {
-         //equivalent to ftell() in C
-         pos, _ = fp.Seek(0, os.SEEK_CUR) 
       }
+      
+      //equivalent to ftell() in C
+      pos, _ = fp.Seek(0, os.SEEK_CUR) 
+   }
+
+   if found1 == false {
+      fmt.Println("Error: Byte sequence not found in file.")
    }
 }
 
