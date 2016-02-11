@@ -38,27 +38,30 @@ func deletefromslice(n int, slice []byte) []byte {      //return false if no buf
    return slice
 }
 
-func contains(needle []byte, haystack []byte) {
+func contains(needle []byte, haystack []byte) (bool, int) {
 
    nlen := len(needle)
    xlen := len(haystack)
 
+   offset = 0
+
    for x := 0; x < xlen; x+=1 {
       if len(haystack) > len(needle) { 
-         if reflect.DeepEqual(needle, haystack[:nlen]) {
+         if reflect.DeepEqual(needle, haystack[:nlen]) {    //check two slices are equal
             fmt.Println("TRUE ", haystack)
             break
          } else {
+            //iterate through haystack comparing two by two...
             haystack = deletefromslice(nlen, haystack)
-            fmt.Println(haystack)
          }
       }
    }
+
+   return 1, true
 }
 
 func readBytes(buf []byte, byteval1 []byte, byteval2 []byte) bool {
    contains(byteval1, buf)
-   //reflect.DeepEqual
    return true
 }
 
