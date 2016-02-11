@@ -111,10 +111,12 @@ func readFile(fp *os.File, fi os.FileInfo, byteval1 []byte, byteval2 []byte) {
 
    if found1 == false {
       fmt.Fprintln(os.Stderr, "INFO: Byte sequence one not found in file.")
+      os.Exit(1)
    }
 
    if found2 == false {
       fmt.Fprintln(os.Stderr, "INFO: Byte sequence two not found following byte sequence one.")
+      os.Exit(1)
    }
 
    if found1 && found2 {
