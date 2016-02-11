@@ -65,40 +65,60 @@ func readFile(fp *os.File, fi os.FileInfo, byteval1 []byte, byteval2 []byte) {
    var pos int64 = 0
 
    var found1 = false
-   //var found2 = false
+   var found2 = false
 
    var tmpoff int = 0
    var offset1 int = 0
+   var offset2 int = 0
 
    // read file, control how we reach EOF
    for pos < eof {
-      fmt.Println("Buffer required: ", getbfsize(pos, fi.Size()))
+      //fmt.Fprintln(os.Stderr, "Buffer required: ", getbfsize(pos, fi.Size()))
 
       buf := make([]byte, bfsize)
 
       _, err := fp.Read(buf)
       if err != nil {
-         fmt.Println("ERROR: Error reading bytes: ", err)
+         fmt.Fprintln(os.Stderr, "ERROR: Error reading bytes: ", err)
          break
       }
 
-      found, offset := contains(byteval1, buf)
-      tmpoff += offset
+      if found1 == false {
+         found, offset := contains(byteval1, buf)
+         tmpoff += offset
 
-      if found == true {
-         //we don't need to look for byteval1 any more
-         found1 = true
-         offset1 = tmpoff
-         fmt.Println("xxxx: ", offset1)
-         break
+         if found == true {
+            //we don't need to look for byteval1 any more
+            found1 = true
+            offset1 = tmpoff
+         }
       }
-      
+
+      if found1 == true {
+         found, offset := contains(byteval2, buf)
+         tmpoff += offset
+
+         if found == true && found2 == false {
+            found2 = true
+            offset2 = tmpoff
+            break
+         }
+      }
+
       //equivalent to ftell() in C
       pos, _ = fp.Seek(0, os.SEEK_CUR) 
    }
 
    if found1 == false {
-      fmt.Println("Error: Byte sequence not found in file.")
+      fmt.Fprintln(os.Stderr, "INFO: Byte sequence one not found in file.")
+   }
+
+   if found2 == false {
+      fmt.Fprintln(os.Stderr, "INFO: Byte sequence two not found following byte sequence one.")
+   }
+
+   if found1 && found2 {
+      fmt.Println((offset2-offset1)-len(byteval1))
    }
 }
 
@@ -115,41 +135,41 @@ func main() {
 
    res, _ := regexp.MatchString("^[A-Fa-f\\d]+$", magic1)
    if res == false {
-      fmt.Println("INFO: Magic number one is not hexadecimal.")
+      fmt.Fprintln(os.Stderr, "INFO: Magic number one is not hexadecimal.")
       os.Exit(1)
    } else {
       if magic1len % 2 != 0 {
-         fmt.Println("INFO: Magic number two contains uneven character count.")
+         fmt.Fprintln(os.Stderr, "INFO: Magic number two contains uneven character count.")
          os.Exit(1)         
       }
    }
 
    res, _ = regexp.MatchString("^[A-Fa-f\\d]+$", magic2)
    if res == false {
-      fmt.Println("INFO: Magic number two is not hexadecimal.")
+      fmt.Fprintln(os.Stderr, "INFO: Magic number two is not hexadecimal.")
       os.Exit(1)
    } else {
       if magic2len % 2 != 0 {
-         fmt.Println("INFO: Magic number two contains uneven character count.")
+         fmt.Fprintln(os.Stderr, "INFO: Magic number two contains uneven character count.")
          os.Exit(1)         
       }
    }
 
    byteval1, _ := hex.DecodeString(magic1)
-   fmt.Println(byteval1)
+   //fmt.Fprintln(os.Stderr, byteval1)
 
    byteval2, _ := hex.DecodeString(magic2)
-   fmt.Println(byteval2)
+   //fmt.Fprintln(os.Stderr, byteval2)
 
    f, err := os.Open(file)
    if err != nil {
-      fmt.Println("ERROR: ", err)
+      fmt.Fprintln(os.Stderr, "ERROR: ", err)
       os.Exit(1)
    }
 
    fi, err := f.Stat()
    if err != nil {
-      fmt.Println("ERROR: ", err)
+      fmt.Fprintln(os.Stderr, "ERROR: ", err)
       os.Exit(1)
    }
 
@@ -157,7 +177,7 @@ func main() {
    case mode.IsRegular():
       readFile(f, fi, byteval1, byteval2)
    default: 
-      fmt.Println("INFO: Not a file.")
+      fmt.Fprintln(os.Stderr, "INFO: Not a file.")
    }
 
 }
