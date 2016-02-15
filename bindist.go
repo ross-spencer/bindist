@@ -12,6 +12,7 @@ import (
 var magic1 string
 var magic2 string
 var file string
+var size bool = false
 
 //window we'll use to search for values
 var bfsize int64 = 2048
@@ -20,6 +21,7 @@ func init() {
    flag.StringVar(&magic1, "magic1", "false", "First magic number in a file to begin from, and offset, e.g. magic,offset.")
    flag.StringVar(&magic2, "magic2", "false", "Second magic number in a file to search for, no offset, e.g. magic.")
    flag.StringVar(&file, "file", "false", "File to find the distance between.")
+   flag.BoolVar(&size, "size", false, "Return size of file alongsize offset in bytes.")
 }
 
 func getbfsize(fsize int64, pos int64) int64 {
@@ -120,7 +122,11 @@ func readFile(fp *os.File, fi os.FileInfo, byteval1 []byte, byteval2 []byte) {
    }
 
    if found1 && found2 {
-      fmt.Println((offset2-offset1)-len(byteval1))
+      if size == true {
+         fmt.Fprintln(os.Stderr, (offset2-offset1)-len(byteval1), ",", fi.Size())
+      } else {
+         fmt.Fprintln(os.Stderr, (offset2-offset1)-len(byteval1))
+      }
    }
 }
 
@@ -131,6 +137,8 @@ func main() {
       flag.Usage()
       os.Exit(0)
    }
+
+   fmt.Println(size)
 
    var magic1len = len(magic1)
    var magic2len = len(magic2)
@@ -181,5 +189,4 @@ func main() {
    default: 
       fmt.Fprintln(os.Stderr, "INFO: Not a file.")
    }
-
 }
