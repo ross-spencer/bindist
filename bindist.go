@@ -147,8 +147,6 @@ func main() {
       os.Exit(0)
    }
 
-   fmt.Println(size)
-
    var magic1len = len(magic1)
    var magic2len = len(magic2)
 
@@ -195,6 +193,8 @@ func main() {
    switch mode := fi.Mode(); {
    case mode.IsRegular():
       readFile(f, fi, byteval1, byteval2)
+   //case mode.IsDir():
+   //   fmt.Fprintln(os.Stderr, "INFO: DO DIR.")
    default: 
       fmt.Fprintln(os.Stderr, "INFO: Not a file.")
    }
