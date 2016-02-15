@@ -7,6 +7,7 @@ import (
       "regexp"
       "reflect"
       "encoding/hex"
+      "path/filepath"
    )
 
 var magic1 string
@@ -64,7 +65,33 @@ func contains(needle []byte, haystack []byte) (bool, int) {
    return found, offset
 }
 
-func readFile(fp *os.File, fi os.FileInfo, byteval1 []byte, byteval2 []byte) {
+func convertByteVals() (byteval1 []byte, byteval2 []byte) {
+   byteval1, _ = hex.DecodeString(magic1)
+   byteval2, _ = hex.DecodeString(magic2)
+   return byteval1, byteval2
+}
+
+//callback for walk needs to match the following:
+//type WalkFunc func(path string, info os.FileInfo, err error) error
+func readFile (path string, fi os.FileInfo, err error) error {
+   switch mode := fi.Mode(); {
+   case mode.IsRegular():
+      f, err := os.Open(path)
+      if err != nil {
+         fmt.Fprintln(os.Stderr, "ERROR: ", err)
+         os.Exit(1)
+      }
+      b1, b2 := convertByteVals()
+      handleFile(f, fi, b1, b2)
+   case mode.IsDir():
+      fmt.Fprintln(os.Stderr, "INFO:", fi.Name(), "is a directory.")      
+   default: 
+      fmt.Fprintln(os.Stderr, "INFO: Something completely different.")
+   }
+   return nil
+}
+
+func handleFile(fp *os.File, fi os.FileInfo, byteval1 []byte, byteval2 []byte) {
    var eof int64 = fi.Size()
    var pos int64 = 0
 
@@ -115,23 +142,21 @@ func readFile(fp *os.File, fi os.FileInfo, byteval1 []byte, byteval2 []byte) {
 
    if found1 == false {
       fmt.Fprintln(os.Stderr, "INFO: Byte sequence one not found in file.")
-      os.Exit(1)
    }
 
    if found2 == false {
       fmt.Fprintln(os.Stderr, "INFO: Byte sequence two not found following byte sequence one.")
-      os.Exit(1)
    }
 
    if found1 && found2 {
       if size == true && fname == false {
-         fmt.Fprintln(os.Stderr, (offset2-offset1)-len(byteval1), ",", fi.Size())
+         fmt.Fprintln(os.Stdout, (offset2-offset1)-len(byteval1), ",", fi.Size())
       } else if size == true && fname == true {
-         fmt.Fprintln(os.Stderr, (offset2-offset1)-len(byteval1), ",", fi.Size(), ",", file)
+         fmt.Fprintln(os.Stdout, (offset2-offset1)-len(byteval1), ",", fi.Size(), ",", fi.Name())
       } else if fname == true && size == false {
-         fmt.Fprintln(os.Stderr, (offset2-offset1)-len(byteval1), ",", file)
+         fmt.Fprintln(os.Stdout, (offset2-offset1)-len(byteval1), ",", fi.Name())
       } else {
-         fmt.Fprintln(os.Stderr, (offset2-offset1)-len(byteval1))
+         fmt.Fprintln(os.Stdout, (offset2-offset1)-len(byteval1))
       }
    }
 }
@@ -172,30 +197,5 @@ func main() {
       }
    }
 
-   byteval1, _ := hex.DecodeString(magic1)
-   //fmt.Fprintln(os.Stderr, byteval1)
-
-   byteval2, _ := hex.DecodeString(magic2)
-   //fmt.Fprintln(os.Stderr, byteval2)
-
-   f, err := os.Open(file)
-   if err != nil {
-      fmt.Fprintln(os.Stderr, "ERROR: ", err)
-      os.Exit(1)
-   }
-
-   fi, err := f.Stat()
-   if err != nil {
-      fmt.Fprintln(os.Stderr, "ERROR: ", err)
-      os.Exit(1)
-   }
-
-   switch mode := fi.Mode(); {
-   case mode.IsRegular():
-      readFile(f, fi, byteval1, byteval2)
-   //case mode.IsDir():
-   //   fmt.Fprintln(os.Stderr, "INFO: DO DIR.")
-   default: 
-      fmt.Fprintln(os.Stderr, "INFO: Not a file.")
-   }
+   filepath.Walk(file, readFile)
 }
