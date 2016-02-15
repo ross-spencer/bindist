@@ -24,8 +24,6 @@ Calculate distance between two hexadecimal values.
 
 ##License
 
-License
-
 Copyright (c) 2016 Ross Spencer
 
 This software is provided 'as-is', without any express or implied warranty. 
