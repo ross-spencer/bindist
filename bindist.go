@@ -22,8 +22,8 @@ func init() {
    flag.StringVar(&magic1, "magic1", "false", "First magic number in a file to begin from, and offset, e.g. magic,offset.")
    flag.StringVar(&magic2, "magic2", "false", "Second magic number in a file to search for, no offset, e.g. magic.")
    flag.StringVar(&file, "file", "false", "File to find the distance between.")
-   flag.BoolVar(&size, "size", false, "Return size of file alongsize offset in bytes.")
-   flag.BoolVar(&fname, "fname", false, "Return filename alongside offset and size.")
+   flag.BoolVar(&size, "size", false, "[Optional] Return size of file alongsize offset in bytes.")
+   flag.BoolVar(&fname, "fname", false, "[Optional] Return filename alongside offset and size.")
 }
 
 func getbfsize(fsize int64, pos int64) int64 {
@@ -140,6 +140,9 @@ func main() {
    flag.Parse()
 
    if flag.NFlag() <= 2 {    // can access args w/ len(os.Args[1:]) too
+      fmt.Fprintln(os.Stderr, "Usage:  bindist [-magic1 ...] [-magic2 ...] [-file ...]")
+      fmt.Fprintln(os.Stderr, "               [Optional -size] [Optional -fname]")
+      fmt.Fprintln(os.Stderr, "Output: [CSV] 'offset','size','filename'")
       flag.Usage()
       os.Exit(0)
    }
