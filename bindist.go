@@ -143,11 +143,9 @@ func handleFile(fp *os.File, fi os.FileInfo, byteval1 []byte, byteval2 []byte) {
    }
 
    if found1 == false {
-      fmt.Fprintln(os.Stderr, "INFO: Byte sequence one not found in file.")
-   }
-
-   if found2 == false {
-      fmt.Fprintln(os.Stderr, "INFO: Byte sequence two not found following byte sequence one.")
+      fmt.Fprintln(os.Stderr, "INFO: Byte sequence one not found in file", fi.Name())
+   } else if found2 == false {
+      fmt.Fprintln(os.Stderr, "INFO: Byte sequence two not found following byte sequence one", fi.Name())
    }
 
    if found1 && found2 {
