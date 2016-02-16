@@ -74,15 +74,17 @@ func convertByteVals() (byteval1 []byte, byteval2 []byte) {
 //callback for walk needs to match the following:
 //type WalkFunc func(path string, info os.FileInfo, err error) error
 func readFile (path string, fi os.FileInfo, err error) error {
+   
+   f, err := os.Open(path)
+   if err != nil {
+      fmt.Fprintln(os.Stderr, "ERROR:", err)
+      os.Exit(1)
+   }
+
    switch mode := fi.Mode(); {
    case mode.IsRegular():
-      f, err := os.Open(path)
-      if err != nil {
-         fmt.Fprintln(os.Stderr, "ERROR: ", err)
-         os.Exit(1)
-      }
-      b1, b2 := convertByteVals()
-      handleFile(f, fi, b1, b2)
+      byteval1, byteval2 := convertByteVals()
+      handleFile(f, fi, byteval1, byteval2)
    case mode.IsDir():
       fmt.Fprintln(os.Stderr, "INFO:", fi.Name(), "is a directory.")      
    default: 
@@ -152,9 +154,9 @@ func handleFile(fp *os.File, fi os.FileInfo, byteval1 []byte, byteval2 []byte) {
       if size == true && fname == false {
          fmt.Fprintln(os.Stdout, (offset2-offset1)-len(byteval1), ",", fi.Size())
       } else if size == true && fname == true {
-         fmt.Fprintln(os.Stdout, (offset2-offset1)-len(byteval1), ",", fi.Size(), ",", fi.Name())
+         fmt.Fprintln(os.Stdout, (offset2-offset1)-len(byteval1), ",", fi.Size(), ",\"", fi.Name(), "\"")
       } else if fname == true && size == false {
-         fmt.Fprintln(os.Stdout, (offset2-offset1)-len(byteval1), ",", fi.Name())
+         fmt.Fprintln(os.Stdout, (offset2-offset1)-len(byteval1), ",\"", fi.Name(), "\"")
       } else {
          fmt.Fprintln(os.Stdout, (offset2-offset1)-len(byteval1))
       }
