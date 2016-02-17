@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"flag"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -17,7 +18,10 @@ var (
 	size   bool // bools initialize false
 	fname  bool
 
-	bfsize int64 = 2048 //window we'll use to search for values
+	byteval1  []byte
+	byteval2  []byte
+	maxNeedle int
+	buf       = make([]byte, 4096)
 )
 
 func init() {
@@ -28,14 +32,8 @@ func init() {
 	flag.BoolVar(&fname, "fname", false, "[Optional] Return filename alongside offset and size.")
 }
 
-func getbfsize(fsize int64, pos int64) int64 {
-	newsize := (pos - fsize)
-	if newsize > 0 && newsize < bfsize {
-		bfsize = newsize
-	}
-	return bfsize
-}
-
+// can simplify this func by using bytes package
+// no need to delete the start of a slice - can just reslice. E.g. to "delete" first n elements of a slice, just do slc = slc[n:]
 func contains(needle []byte, haystack []byte) (bool, int) {
 	var offset int
 	for ; offset <= len(haystack)-len(needle); offset += 1 {
@@ -46,26 +44,72 @@ func contains(needle []byte, haystack []byte) (bool, int) {
 	return false, offset
 }
 
-func convertByteVals() (byteval1 []byte, byteval2 []byte) {
-	byteval1, _ = hex.DecodeString(magic1)
-	byteval2, _ = hex.DecodeString(magic2)
-	return byteval1, byteval2
+func handleFile(fp *os.File, fi os.FileInfo) {
+	var found bool
+	var start, fileoff, offset1, offset2 int
+	for {
+		i, err := fp.Read(buf[start:])
+		if err != nil && err != io.EOF {
+			fmt.Fprintf(os.Stderr, "ERROR: %v\n", err)
+			return
+		}
+		fileoff += i
+		if !found {
+			// start is the number of bytes we've copied from the tail of the buffer on the previous loop
+			// i is the length of the current read. Start + i will normally be the full length of the buffer. Except when we reach EOF.
+			if f, off := contains(byteval1, buf[:start+i]); f {
+				found = true
+				offset1 = fileoff - len(buf[:start+i]) + off
+				// copy remainder of buffer before looping in case the sequences are in same buffer
+				copy(buf, buf[off+len(byteval1):start+i])
+				start = len(buf[off+len(byteval1) : start+i])
+				// immediately loop again. We may be at io.EOF already here but this is OK, the next read size will just be 0
+				continue
+			}
+		} else {
+			if f, off := contains(byteval2, buf[:start+i]); f {
+				// Success, print response and return early
+				offset2 = fileoff - len(buf[:start+i]) + off
+				switch {
+				case size && !fname:
+					fmt.Fprintln(os.Stdout, (offset2-offset1)-len(byteval1), ",", fi.Size())
+				case size && fname:
+					fmt.Fprintln(os.Stdout, (offset2-offset1)-len(byteval1), ",", fi.Size(), ",\"", fi.Name(), "\"")
+				case fname && !size:
+					fmt.Fprintln(os.Stdout, (offset2-offset1)-len(byteval1), ",\"", fi.Name(), "\"")
+				default:
+					fmt.Fprintln(os.Stdout, (offset2-offset1)-len(byteval1), offset1, offset2)
+				}
+				return
+			}
+		}
+		// have reached end of file without finding both sequences :(
+		if err == io.EOF {
+			if !found {
+				fmt.Fprintln(os.Stderr, "INFO: Byte sequence one not found in file", fi.Name())
+			} else {
+				fmt.Fprintln(os.Stderr, "INFO: Byte sequence two not found following byte sequence one", fi.Name())
+			}
+			return
+		}
+		// copy the last bit of the buffer to the start so that we can find sequences that overlap the window we are searching
+		copy(buf, buf[start+i-maxNeedle:start+i])
+		start = maxNeedle
+	}
 }
 
 //callback for walk needs to match the following:
 //type WalkFunc func(path string, info os.FileInfo, err error) error
 func readFile(path string, fi os.FileInfo, err error) error {
-
 	f, err := os.Open(path)
+	defer f.Close() // don't forget to close the file
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "ERROR:", err)
 		os.Exit(1) //should only exit if root is null, consider no-exit
 	}
-
 	switch mode := fi.Mode(); {
 	case mode.IsRegular():
-		byteval1, byteval2 := convertByteVals()
-		handleFile(f, fi, byteval1, byteval2)
+		handleFile(f, fi)
 	case mode.IsDir():
 		fmt.Fprintln(os.Stderr, "INFO:", fi.Name(), "is a directory.")
 	default:
@@ -74,77 +118,8 @@ func readFile(path string, fi os.FileInfo, err error) error {
 	return nil
 }
 
-func handleFile(fp *os.File, fi os.FileInfo, byteval1 []byte, byteval2 []byte) {
-	var eof int64 = fi.Size()
-	var pos int64 = 0
-
-	var found1 = false
-	var found2 = false
-
-	var tmpoff int = 0
-	var offset1 int = 0
-	var offset2 int = 0
-
-	// read file, control how we reach EOF
-	for pos < eof {
-		//fmt.Fprintln(os.Stderr, "Buffer required: ", getbfsize(pos, fi.Size()))
-
-		buf := make([]byte, bfsize)
-
-		_, err := fp.Read(buf)
-		if err != nil {
-			fmt.Fprintln(os.Stderr, "ERROR: Error reading bytes: ", err)
-			break
-		}
-
-		if found1 == false {
-			found, offset := contains(byteval1, buf)
-			tmpoff += offset
-
-			if found == true {
-				//we don't need to look for byteval1 any more
-				found1 = true
-				offset1 = tmpoff
-			}
-		}
-
-		if found1 == true {
-			found, offset := contains(byteval2, buf)
-			tmpoff += offset
-
-			if found == true && found2 == false {
-				found2 = true
-				offset2 = tmpoff
-				break
-			}
-		}
-
-		//equivalent to ftell() in C
-		pos, _ = fp.Seek(0, os.SEEK_CUR)
-	}
-
-	if found1 == false {
-		fmt.Fprintln(os.Stderr, "INFO: Byte sequence one not found in file", fi.Name())
-	} else if found2 == false {
-		fmt.Fprintln(os.Stderr, "INFO: Byte sequence two not found following byte sequence one", fi.Name())
-	}
-
-	if found1 && found2 {
-		if size == true && fname == false {
-			fmt.Fprintln(os.Stdout, (offset2-offset1)-len(byteval1), ",", fi.Size())
-		} else if size == true && fname == true {
-			fmt.Fprintln(os.Stdout, (offset2-offset1)-len(byteval1), ",", fi.Size(), ",\"", fi.Name(), "\"")
-		} else if fname == true && size == false {
-			fmt.Fprintln(os.Stdout, (offset2-offset1)-len(byteval1), ",\"", fi.Name(), "\"")
-		} else {
-			fmt.Fprintln(os.Stdout, (offset2-offset1)-len(byteval1))
-		}
-	}
-}
-
 func main() {
 	flag.Parse()
-
 	if flag.NFlag() <= 2 { // can access args w/ len(os.Args[1:]) too
 		fmt.Fprintln(os.Stderr, "Usage:  bindist [-magic1 ...] [-magic2 ...] [-file ...]")
 		fmt.Fprintln(os.Stderr, "               [Optional -size] [Optional -fname]")
@@ -153,29 +128,33 @@ func main() {
 		os.Exit(0)
 	}
 
-	var magic1len = len(magic1)
-	var magic2len = len(magic2)
-
 	res, _ := regexp.MatchString("^[A-Fa-f\\d]+$", magic1)
 	if res == false {
 		fmt.Fprintln(os.Stderr, "INFO: Magic number one is not hexadecimal.")
 		os.Exit(1)
 	} else {
-		if magic1len%2 != 0 {
+		if len(magic1)%2 != 0 {
 			fmt.Fprintln(os.Stderr, "INFO: Magic number two contains uneven character count.")
 			os.Exit(1)
 		}
 	}
-
 	res, _ = regexp.MatchString("^[A-Fa-f\\d]+$", magic2)
 	if res == false {
 		fmt.Fprintln(os.Stderr, "INFO: Magic number two is not hexadecimal.")
 		os.Exit(1)
 	} else {
-		if magic2len%2 != 0 {
+		if len(magic2)%2 != 0 {
 			fmt.Fprintln(os.Stderr, "INFO: Magic number two contains uneven character count.")
 			os.Exit(1)
 		}
+	}
+
+	byteval1, _ = hex.DecodeString(magic1) // consider just using the errors returned here to test hex validity (rather than validate with regexes)? Would simplify this func
+	byteval2, _ = hex.DecodeString(magic2)
+
+	maxNeedle = len(byteval1)
+	if len(byteval2) > maxNeedle {
+		maxNeedle = len(byteval2)
 	}
 
 	filepath.Walk(file, readFile)
