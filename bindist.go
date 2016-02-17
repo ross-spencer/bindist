@@ -32,18 +32,6 @@ func init() {
 	flag.BoolVar(&fname, "fname", false, "[Optional] Return filename alongside offset and size.")
 }
 
-// can simplify this func by using bytes package
-// no need to delete the start of a slice - can just reslice. E.g. to "delete" first n elements of a slice, just do slc = slc[n:]
-func contains(needle []byte, haystack []byte) (bool, int) {
-	var offset int
-	for ; offset <= len(haystack)-len(needle); offset += 1 {
-		if bytes.Equal(needle, haystack[offset:offset+len(needle)]) { //check two slices are equal
-			return true, offset
-		}
-	}
-	return false, offset
-}
-
 func handleFile(fp *os.File, fi os.FileInfo) {
 	var found bool
 	var start, fileoff, offset1, offset2 int
@@ -57,7 +45,7 @@ func handleFile(fp *os.File, fi os.FileInfo) {
 		if !found {
 			// start is the number of bytes we've copied from the tail of the buffer on the previous loop
 			// i is the length of the current read. Start + i will normally be the full length of the buffer. Except when we reach EOF.
-			if f, off := contains(byteval1, buf[:start+i]); f {
+			if off := bytes.Index(buf[:start+i], byteval2); off >= 0 {
 				found = true
 				offset1 = fileoff - len(buf[:start+i]) + off
 				// copy remainder of buffer before looping in case the sequences are in same buffer
@@ -67,7 +55,7 @@ func handleFile(fp *os.File, fi os.FileInfo) {
 				continue
 			}
 		} else {
-			if f, off := contains(byteval2, buf[:start+i]); f {
+			if off := bytes.Index(buf[:start+i], byteval2); off >= 0 {
 				// Success, print response and return early
 				offset2 = fileoff - len(buf[:start+i]) + off
 				switch {
@@ -78,7 +66,7 @@ func handleFile(fp *os.File, fi os.FileInfo) {
 				case fname && !size:
 					fmt.Fprintln(os.Stdout, (offset2-offset1)-len(byteval1), ",\"", fi.Name(), "\"")
 				default:
-					fmt.Fprintln(os.Stdout, (offset2-offset1)-len(byteval1), offset1, offset2)
+					fmt.Fprintln(os.Stdout, (offset2-offset1)-len(byteval1))
 				}
 				return
 			}
@@ -152,7 +140,7 @@ func main() {
 	byteval1, _ = hex.DecodeString(magic1) // consider just using the errors returned here to test hex validity (rather than validate with regexes)? Would simplify this func
 	byteval2, _ = hex.DecodeString(magic2)
 
-	maxNeedle = len(byteval1)
+	maxNeedle = len(byteval1) // store length of magic1 or magic2, whichever longer. This will be the length of the tail that we copy to the start of each buffer to cover overlaps.
 	if len(byteval2) > maxNeedle {
 		maxNeedle = len(byteval2)
 	}
