@@ -10,14 +10,15 @@ import (
 	"regexp"
 )
 
-var magic1 string
-var magic2 string
-var file string
-var size bool = false
-var fname bool = false
+var (
+	magic1 string
+	magic2 string
+	file   string
+	size   bool // bools initialize false
+	fname  bool
 
-//window we'll use to search for values
-var bfsize int64 = 2048
+	bfsize int64 = 2048 //window we'll use to search for values
+)
 
 func init() {
 	flag.StringVar(&magic1, "magic1", "false", "First magic number in a file to begin from, and offset, e.g. magic,offset.")
