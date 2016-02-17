@@ -48,13 +48,11 @@ func contains(needle []byte, haystack []byte) (bool, int) {
 	nlen := len(needle)
 	xlen := len(haystack)
 
-	var offset int = 0
-	var found bool = false
+	var offset int
 
-	for x := 0; x < xlen && found == false; x += 1 {
+	for x := 0; x < xlen; x += 1 {
 		if bytes.Equal(needle, haystack[:nlen]) { //check two slices are equal
-			found = true
-			break
+			return true, offset
 		} else {
 			//iterate through haystack comparing two by two...
 			haystack = deletefromslice(1, haystack)
@@ -62,7 +60,7 @@ func contains(needle []byte, haystack []byte) (bool, int) {
 		offset += 1
 	}
 
-	return found, offset
+	return false, offset
 }
 
 func convertByteVals() (byteval1 []byte, byteval2 []byte) {
