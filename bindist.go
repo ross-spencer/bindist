@@ -35,31 +35,13 @@ func getbfsize(fsize int64, pos int64) int64 {
 	return bfsize
 }
 
-func deletefromslice(n int, slice []byte) []byte { //return false if no buffer left?
-	//Slice Tricks: a = append(a[:i], a[i+1:]...)
-	for x := 0; x < n; x += 1 {
-		slice = append(slice[:0], slice[0+1:]...)
-	}
-	return slice
-}
-
 func contains(needle []byte, haystack []byte) (bool, int) {
-
-	nlen := len(needle)
-	xlen := len(haystack)
-
 	var offset int
-
-	for x := 0; x < xlen; x += 1 {
-		if bytes.Equal(needle, haystack[:nlen]) { //check two slices are equal
+	for ; offset <= len(haystack)-len(needle); offset += 1 {
+		if bytes.Equal(needle, haystack[offset:offset+len(needle)]) { //check two slices are equal
 			return true, offset
-		} else {
-			//iterate through haystack comparing two by two...
-			haystack = deletefromslice(1, haystack)
 		}
-		offset += 1
 	}
-
 	return false, offset
 }
 
