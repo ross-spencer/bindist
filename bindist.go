@@ -21,7 +21,7 @@ var (
 	byteval1  []byte
 	byteval2  []byte
 	maxNeedle int
-	buf       = make([]byte, 4096)
+	buf       [4096]byte
 )
 
 func init() {
@@ -49,7 +49,7 @@ func handleFile(fp *os.File, fi os.FileInfo) {
 				found = true
 				offset1 = fileoff - len(buf[:start+i]) + off
 				// copy remainder of buffer before looping in case the sequences are in same buffer
-				copy(buf, buf[off+len(byteval1):start+i])
+				copy(buf[:], buf[off+len(byteval1):start+i])
 				start = len(buf[off+len(byteval1) : start+i])
 				// immediately loop again. We may be at io.EOF already here but this is OK, the next read size will just be 0
 				continue
@@ -60,11 +60,11 @@ func handleFile(fp *os.File, fi os.FileInfo) {
 				offset2 = fileoff - len(buf[:start+i]) + off
 				switch {
 				case size && !fname:
-					fmt.Fprintln(os.Stdout, (offset2-offset1)-len(byteval1), ",", fi.Size())
+					fmt.Fprintf(os.Stdout, "%d, %d\n", (offset2-offset1)-len(byteval1), fi.Size())
 				case size && fname:
-					fmt.Fprintln(os.Stdout, (offset2-offset1)-len(byteval1), ",", fi.Size(), ",\"", fi.Name(), "\"")
+					fmt.Fprintf(os.Stdout, "%d, %d, \"%s\"\n", (offset2-offset1)-len(byteval1), fi.Size(), fi.Name())
 				case fname && !size:
-					fmt.Fprintln(os.Stdout, (offset2-offset1)-len(byteval1), ",\"", fi.Name(), "\"")
+					fmt.Fprintf(os.Stdout, "%d, \"%s\"\n", (offset2-offset1)-len(byteval1), fi.Name())
 				default:
 					fmt.Fprintln(os.Stdout, (offset2-offset1)-len(byteval1))
 				}
@@ -74,14 +74,14 @@ func handleFile(fp *os.File, fi os.FileInfo) {
 		// have reached end of file without finding both sequences :(
 		if err == io.EOF {
 			if !found {
-				fmt.Fprintln(os.Stderr, "INFO: Byte sequence one not found in file", fi.Name())
+				fmt.Fprintf(os.Stderr, "INFO: Byte sequence one not found in file %s\n", fi.Name())
 			} else {
-				fmt.Fprintln(os.Stderr, "INFO: Byte sequence two not found following byte sequence one", fi.Name())
+				fmt.Fprintf(os.Stderr, "INFO: Byte sequence two not found following byte sequence one %s\n", fi.Name())
 			}
 			return
 		}
 		// copy the last bit of the buffer to the start so that we can find sequences that overlap the window we are searching
-		copy(buf, buf[start+i-maxNeedle:start+i])
+		copy(buf[:], buf[start+i-maxNeedle:start+i])
 		start = maxNeedle
 	}
 }
@@ -92,14 +92,14 @@ func readFile(path string, fi os.FileInfo, err error) error {
 	f, err := os.Open(path)
 	defer f.Close() // don't forget to close the file
 	if err != nil {
-		fmt.Fprintln(os.Stderr, "ERROR:", err)
+		fmt.Fprintf(os.Stderr, "ERROR: %v\n", err)
 		os.Exit(1) //should only exit if root is null, consider no-exit
 	}
 	switch mode := fi.Mode(); {
 	case mode.IsRegular():
 		handleFile(f, fi)
 	case mode.IsDir():
-		fmt.Fprintln(os.Stderr, "INFO:", fi.Name(), "is a directory.")
+		fmt.Fprintf(os.Stderr, "INFO: %s is a directory.\n", fi.Name())
 	default:
 		fmt.Fprintln(os.Stderr, "INFO: Something completely different.")
 	}
