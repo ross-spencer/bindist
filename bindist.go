@@ -45,7 +45,7 @@ func handleFile(fp *os.File, fi os.FileInfo) {
 		if !found {
 			// start is the number of bytes we've copied from the tail of the buffer on the previous loop
 			// i is the length of the current read. Start + i will normally be the full length of the buffer. Except when we reach EOF.
-			if off := bytes.Index(buf[:start+i], byteval2); off >= 0 {
+			if off := bytes.Index(buf[:start+i], byteval1); off >= 0 {
 				found = true
 				offset1 = fileoff - len(buf[:start+i]) + off
 				// copy remainder of buffer before looping in case the sequences are in same buffer
