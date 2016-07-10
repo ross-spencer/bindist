@@ -19,10 +19,6 @@ var fname bool = false
 //window we'll use to search for values
 var bfsize int64 = 2048
 
-func add(a int, b int) int {
-   return a+b
-}
-
 func init() {
    flag.StringVar(&magic1, "magic1", "false", "First magic number in a file to begin from, and offset, e.g. magic,offset.")
    flag.StringVar(&magic2, "magic2", "false", "Second magic number in a file to search for, no offset, e.g. magic.")
