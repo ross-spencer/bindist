@@ -37,7 +37,7 @@ func TestExportContains(t *testing.T) {
 
    found3, offset3 := ExportContains(n3,h3)
    if found3 != false && offset3 != 0 {
-   	t.Error("Needle not found in haystack when it should have been.")
+   	t.Error("Needle found in haystack when it shouldn't have been.")
    }
 
    found4, offset4 := ExportContains(n4,h4)
