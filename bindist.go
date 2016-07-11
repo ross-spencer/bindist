@@ -5,19 +5,25 @@ import (
       "fmt"
       "flag"
       "regexp"
-      "reflect"
+      "bytes"
       "encoding/hex"
       "path/filepath"
    )
 
-var magic1 string
-var magic2 string
-var file string
-var size bool = false
-var fname bool = false
+var (
+	magic1 string
+	magic2 string
+	file   string
+	size   bool    //bools initialize false
+	fname  bool
 
-//window we'll use to search for values
-var bfsize int64 = 2048
+	byteval1  []byte
+	byteval2  []byte
+	maxNeedle int
+
+   //window we'll use to search for values
+   bfsize int64 = 2048
+)
 
 func init() {
    flag.StringVar(&magic1, "magic1", "false", "First magic number in a file to begin from, and offset, e.g. magic,offset.")
@@ -45,30 +51,22 @@ func deletefromslice(n int, slice []byte) []byte {      //return false if no buf
 
 func contains(needle []byte, haystack []byte) (bool, int) {
 
-   nlen := len(needle)
-   xlen := len(haystack)
+	nlen := len(needle)
+	xlen := len(haystack)
 
-   var offset int = 0
-   var found bool = false
+	var offset int
 
-   for x := 0; x < xlen && found == false; x+=1 {
-      if reflect.DeepEqual(needle, haystack[:nlen]) {    //check two slices are equal
-         found = true
-         break
-      } else {
-         //iterate through haystack comparing two by two...
-         haystack = deletefromslice(1, haystack)
-      }
-      offset+=1
-   }
+	for x := 0; x < xlen; x += 1 {
+		if bytes.Equal(needle, haystack[:nlen]) { //check two slices are equal
+			return true, offset
+		} else {
+			//iterate through haystack comparing two by two...
+			haystack = deletefromslice(1, haystack)
+		}
+		offset += 1
+	}
 
-   return found, offset
-}
-
-func convertByteVals() (byteval1 []byte, byteval2 []byte) {
-   byteval1, _ = hex.DecodeString(magic1)
-   byteval2, _ = hex.DecodeString(magic2)
-   return byteval1, byteval2
+	return false, offset
 }
 
 //callback for walk needs to match the following:
@@ -76,6 +74,8 @@ func convertByteVals() (byteval1 []byte, byteval2 []byte) {
 func readFile (path string, fi os.FileInfo, err error) error {
    
    f, err := os.Open(path)
+   defer f.Close()   //closing the file
+
    if err != nil {
       fmt.Fprintln(os.Stderr, "ERROR:", err)
       os.Exit(1)  //should only exit if root is null, consider no-exit
@@ -83,8 +83,7 @@ func readFile (path string, fi os.FileInfo, err error) error {
 
    switch mode := fi.Mode(); {
    case mode.IsRegular():
-      byteval1, byteval2 := convertByteVals()
-      handleFile(f, fi, byteval1, byteval2)
+      handleFile(f, fi)
    case mode.IsDir():
       fmt.Fprintln(os.Stderr, "INFO:", fi.Name(), "is a directory.")      
    default: 
@@ -93,7 +92,7 @@ func readFile (path string, fi os.FileInfo, err error) error {
    return nil
 }
 
-func handleFile(fp *os.File, fi os.FileInfo, byteval1 []byte, byteval2 []byte) {
+func handleFile(fp *os.File, fi os.FileInfo) {
    var eof int64 = fi.Size()
    var pos int64 = 0
 
@@ -172,15 +171,12 @@ func main() {
       os.Exit(0)
    }
 
-   var magic1len = len(magic1)
-   var magic2len = len(magic2)
-
    res, _ := regexp.MatchString("^[A-Fa-f\\d]+$", magic1)
    if res == false {
       fmt.Fprintln(os.Stderr, "INFO: Magic number one is not hexadecimal.")
       os.Exit(1)
    } else {
-      if magic1len % 2 != 0 {
+      if len(magic1) % 2 != 0 {
          fmt.Fprintln(os.Stderr, "INFO: Magic number two contains uneven character count.")
          os.Exit(1)         
       }
@@ -191,11 +187,16 @@ func main() {
       fmt.Fprintln(os.Stderr, "INFO: Magic number two is not hexadecimal.")
       os.Exit(1)
    } else {
-      if magic2len % 2 != 0 {
+      if len(magic2) % 2 != 0 {
          fmt.Fprintln(os.Stderr, "INFO: Magic number two contains uneven character count.")
          os.Exit(1)         
       }
    }
+
+   //rl notes: maybe use errors from DecodeString 
+   //instead of validation above... will try
+   byteval1, _ = hex.DecodeString(magic1)
+   byteval2, _ = hex.DecodeString(magic2)
 
    filepath.Walk(file, readFile)
 }
