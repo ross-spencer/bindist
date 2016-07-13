@@ -11,11 +11,14 @@ import (
    )
 
 var (
-	magic1 string
-	magic2 string
-	file   string
-	size   bool    //bools initialize false
-	fname  bool
+   version string = "0.0.1"
+   vers bool
+
+	magic1  string
+	magic2  string
+	file    string
+	size    bool    //bools initialize false
+	fname   bool
 
 	byteval1  []byte
 	byteval2  []byte
@@ -31,6 +34,7 @@ func init() {
    flag.StringVar(&file, "file", "false", "File to find the distance between.")
    flag.BoolVar(&size, "size", false, "[Optional] Return size of file alongsize offset in bytes.")
    flag.BoolVar(&fname, "fname", false, "[Optional] Return filename alongside offset and size.")
+   flag.BoolVar(&vers, "version", false, "[Optional] Return version of bindist.")
 }
 
 func getbfsize(fsize int64, pos int64) int64 {
@@ -167,7 +171,10 @@ func readFile (path string, fi os.FileInfo, err error) error {
 func main() {
    flag.Parse()
 
-   if flag.NFlag() <= 2 {    // can access args w/ len(os.Args[1:]) too
+   if vers {
+      fmt.Fprintf(os.Stderr, "bindist version %s \n", version)
+      os.Exit(0)
+   } else if flag.NFlag() <= 2 {    // can access args w/ len(os.Args[1:]) too
       fmt.Fprintln(os.Stderr, "Usage:  bindist [-magic1 ...] [-magic2 ...] [-file ...]")
       fmt.Fprintln(os.Stderr, "               [Optional -size] [Optional -fname]")
       fmt.Fprintln(os.Stderr, "Output: [CSV] 'offset','size','filename'")
