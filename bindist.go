@@ -1,6 +1,7 @@
 package main
 
 import (
+      "io"
       "os"
       "fmt"
       "flag"
@@ -27,6 +28,7 @@ var (
 
    //window we'll use to search for values
    bfsize int64 = 2048
+   buf [bfsize]byte
 )
 
 func init() {
@@ -95,15 +97,32 @@ func outputResult(found1, found2 bool, offset1, offset2 int, fi os.FileInfo) {
 }
 
 func handleFile(fp *os.File, fi os.FileInfo) {
+   var off int   
+   var windowsize = len(
+   for {
+      i, err := fp.Read(buf[windowsize:])
+		if err != nil && err != io.EOF {
+			fmt.Fprintf(os.Stderr, "ERROR: %v\n", err)
+			return
+		}
+      off+=i
+
+      
+
+      if err == io.EOF {
+         //we haven't returned so far and so we haven't found our values
+         return
+      }
+   }  
+}
+
+func _handleFile(fp *os.File, fi os.FileInfo) {
+
+   var found1, found2 bool
+   var tmpoff, offset1, offset2 int
+   
    var eof int64 = fi.Size()
    var pos int64 = 0
-
-   var found1 = false
-   var found2 = false
-
-   var tmpoff int = 0
-   var offset1 int = 0
-   var offset2 int = 0
 
    // read file, control how we reach EOF
    for pos < eof {
@@ -120,7 +139,6 @@ func handleFile(fp *os.File, fi os.FileInfo) {
       if found1 == false {
          found, offset := contains(byteval1, buf)
          tmpoff += offset
-
          if found == true {
             //we don't need to look for byteval1 any more
             found1 = true
@@ -131,7 +149,6 @@ func handleFile(fp *os.File, fi os.FileInfo) {
       if found1 == true {
          found, offset := contains(byteval2, buf)
          tmpoff += offset
-
          if found == true && found2 == false {
             found2 = true
             offset2 = tmpoff
@@ -152,7 +169,6 @@ func readFile (path string, fi os.FileInfo, err error) error {
    
    f, err := os.Open(path)
    defer f.Close()   //closing the file
-
    if err != nil {
       fmt.Fprintln(os.Stderr, "ERROR:", err)
       os.Exit(1)  //should only exit if root is null, consider no-exit
