@@ -202,13 +202,17 @@ func validateArgsAndGo() {
 func main() {
    flag.Parse()
 
+   var verstring = "bindist version"
+
    if vers {
-      fmt.Fprintf(os.Stderr, "bindist version %s \n", version)
+      fmt.Fprintf(os.Stderr, "%s %s \n", verstring, version)
       os.Exit(0)
    } else if flag.NFlag() <= 2 {    // can access args w/ len(os.Args[1:]) too
       fmt.Fprintln(os.Stderr, "Usage:  bindist [-magic1 ...] [-magic2 ...] [-file ...]")
-      fmt.Fprintln(os.Stderr, "               [Optional -size] [Optional -fname]")
+      fmt.Fprintln(os.Stderr, "                [Optional -size] [Optional -fname]")
+      fmt.Fprintln(os.Stderr, "                [Optional -version]")
       fmt.Fprintln(os.Stderr, "Output: [CSV] 'offset','size','filename'")
+      fmt.Fprintf(os.Stderr, "Output: [STRING] '%s ...'\n", verstring)
       flag.Usage()
       os.Exit(0)
    }
