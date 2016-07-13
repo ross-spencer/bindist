@@ -69,27 +69,24 @@ func contains(needle []byte, haystack []byte) (bool, int) {
 	return false, offset
 }
 
-//callback for walk needs to match the following:
-//type WalkFunc func(path string, info os.FileInfo, err error) error
-func readFile (path string, fi os.FileInfo, err error) error {
-   
-   f, err := os.Open(path)
-   defer f.Close()   //closing the file
-
-   if err != nil {
-      fmt.Fprintln(os.Stderr, "ERROR:", err)
-      os.Exit(1)  //should only exit if root is null, consider no-exit
+func outputResult(found1, found2 bool, offset1, offset2 int, fi os.FileInfo) {
+   if found1 == false {
+      fmt.Fprintln(os.Stderr, "INFO: Byte sequence one not found in file", fi.Name())
+   } else if found2 == false {
+      fmt.Fprintln(os.Stderr, "INFO: Byte sequence two not found following byte sequence one", fi.Name())
    }
 
-   switch mode := fi.Mode(); {
-   case mode.IsRegular():
-      handleFile(f, fi)
-   case mode.IsDir():
-      fmt.Fprintln(os.Stderr, "INFO:", fi.Name(), "is a directory.")      
-   default: 
-      fmt.Fprintln(os.Stderr, "INFO: Something completely different.")
+   if found1 && found2 {
+      if size == true && fname == false {
+         fmt.Fprintln(os.Stdout, (offset2-offset1)-len(byteval1), ",", fi.Size())
+      } else if size == true && fname == true {
+         fmt.Fprintln(os.Stdout, (offset2-offset1)-len(byteval1), ",", fi.Size(), ",\"", fi.Name(), "\"")
+      } else if fname == true && size == false {
+         fmt.Fprintln(os.Stdout, (offset2-offset1)-len(byteval1), ",\"", fi.Name(), "\"")
+      } else {
+         fmt.Fprintln(os.Stdout, (offset2-offset1)-len(byteval1))
+      }
    }
-   return nil
 }
 
 func handleFile(fp *os.File, fi os.FileInfo) {
@@ -141,23 +138,30 @@ func handleFile(fp *os.File, fi os.FileInfo) {
       pos, _ = fp.Seek(0, os.SEEK_CUR) 
    }
 
-   if found1 == false {
-      fmt.Fprintln(os.Stderr, "INFO: Byte sequence one not found in file", fi.Name())
-   } else if found2 == false {
-      fmt.Fprintln(os.Stderr, "INFO: Byte sequence two not found following byte sequence one", fi.Name())
+   outputResult(found1, found2, offset1, offset2, fi)
+}
+
+//callback for walk needs to match the following:
+//type WalkFunc func(path string, info os.FileInfo, err error) error
+func readFile (path string, fi os.FileInfo, err error) error {
+   
+   f, err := os.Open(path)
+   defer f.Close()   //closing the file
+
+   if err != nil {
+      fmt.Fprintln(os.Stderr, "ERROR:", err)
+      os.Exit(1)  //should only exit if root is null, consider no-exit
    }
 
-   if found1 && found2 {
-      if size == true && fname == false {
-         fmt.Fprintln(os.Stdout, (offset2-offset1)-len(byteval1), ",", fi.Size())
-      } else if size == true && fname == true {
-         fmt.Fprintln(os.Stdout, (offset2-offset1)-len(byteval1), ",", fi.Size(), ",\"", fi.Name(), "\"")
-      } else if fname == true && size == false {
-         fmt.Fprintln(os.Stdout, (offset2-offset1)-len(byteval1), ",\"", fi.Name(), "\"")
-      } else {
-         fmt.Fprintln(os.Stdout, (offset2-offset1)-len(byteval1))
-      }
+   switch mode := fi.Mode(); {
+   case mode.IsRegular():
+      handleFile(f, fi)
+   case mode.IsDir():
+      fmt.Fprintln(os.Stderr, "INFO:", fi.Name(), "is a directory.")      
+   default: 
+      fmt.Fprintln(os.Stderr, "INFO: Something completely different.")
    }
+   return nil
 }
 
 func main() {
@@ -193,7 +197,7 @@ func main() {
       }
    }
 
-   //rl notes: maybe use errors from DecodeString 
+   //RL notes: maybe use errors from DecodeString 
    //instead of validation above... will try
    byteval1, _ = hex.DecodeString(magic1)
    byteval2, _ = hex.DecodeString(magic2)
