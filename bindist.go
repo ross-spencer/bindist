@@ -5,6 +5,7 @@ import (
       "fmt"
       "flag"
       "regexp"
+      "errors"
       "bytes"
       "encoding/hex"
       "path/filepath"
@@ -168,27 +169,36 @@ func readFile (path string, fi os.FileInfo, err error) error {
    return nil
 }
 
-func validateArgsAndGo() {
-   res, _ := regexp.MatchString("^[A-Fa-f\\d]+$", magic1)
+func validateHex(magic string) error {
+
+   /*hex errors to return*/
+   const NOTHEX string = "contains invalid hexadecimal characters."
+   const UNEVEN string = "contains uneven character count."
+
+   var re_string string = "^[A-Fa-f\\d]+$"
+
+   res, _ := regexp.MatchString(re_string, magic)
    if res == false {
-      fmt.Fprintln(os.Stderr, "INFO: Magic number one is not hexadecimal.")
+      return errors.New(NOTHEX)
+   }
+   if len(magic) % 2 != 0 {
+      return errors.New(UNEVEN)         
+   }
+   return nil
+}
+
+func validateArgsAndGo() {
+
+   err := validateHex(magic1)
+   if err != nil {
+      fmt.Fprintf(os.Stderr, "ERROR: magic1 %s \n", err)
       os.Exit(1)
-   } else {
-      if len(magic1) % 2 != 0 {
-         fmt.Fprintln(os.Stderr, "INFO: Magic number two contains uneven character count.")
-         os.Exit(1)         
-      }
    }
 
-   res, _ = regexp.MatchString("^[A-Fa-f\\d]+$", magic2)
-   if res == false {
-      fmt.Fprintln(os.Stderr, "INFO: Magic number two is not hexadecimal.")
+   err = validateHex(magic2)
+   if err != nil {
+      fmt.Fprintf(os.Stderr, "ERROR: magic2 %s \n", err)
       os.Exit(1)
-   } else {
-      if len(magic2) % 2 != 0 {
-         fmt.Fprintln(os.Stderr, "INFO: Magic number two contains uneven character count.")
-         os.Exit(1)         
-      }
    }
 
    //RL notes: maybe use errors from DecodeString 
