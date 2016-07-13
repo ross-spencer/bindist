@@ -78,11 +78,11 @@ func outputResult(found1, found2 bool, offset1, offset2 int, fi os.FileInfo) {
 
    if found1 && found2 {
       if size == true && fname == false {
-         fmt.Fprintln(os.Stdout, (offset2-offset1)-len(byteval1), ",", fi.Size())
+		   fmt.Fprintf(os.Stdout, "%d, %d\n", (offset2-offset1)-len(byteval1), fi.Size())
       } else if size == true && fname == true {
-         fmt.Fprintln(os.Stdout, (offset2-offset1)-len(byteval1), ",", fi.Size(), ",\"", fi.Name(), "\"")
+		   fmt.Fprintf(os.Stdout, "%d, %d, \"%s\"\n", (offset2-offset1)-len(byteval1), fi.Size(), fi.Name())
       } else if fname == true && size == false {
-         fmt.Fprintln(os.Stdout, (offset2-offset1)-len(byteval1), ",\"", fi.Name(), "\"")
+         fmt.Fprintf(os.Stdout, "%d, \"%s\"\n", (offset2-offset1)-len(byteval1), fi.Name())
       } else {
          fmt.Fprintln(os.Stdout, (offset2-offset1)-len(byteval1))
       }
