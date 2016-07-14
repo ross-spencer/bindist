@@ -28,7 +28,6 @@ var (
 
    //window we'll use to search for values
    bfsize int64 = 2048
-   buf [bfsize]byte
 )
 
 func init() {
@@ -46,14 +45,6 @@ func getbfsize(fsize int64, pos int64) int64 {
       bfsize = newsize
    }
    return bfsize
-}
-
-func deletefromslice(n int, slice []byte) []byte {      //return false if no buffer left?
-   //Slice Tricks: a = append(a[:i], a[i+1:]...) 
-   for x:=0; x<n; x+=1 {
-      slice = append(slice[:0], slice[0+1:]...)
-   }
-   return slice
 }
 
 func contains(needle []byte, haystack []byte) (bool, int) {
@@ -76,6 +67,14 @@ func contains(needle []byte, haystack []byte) (bool, int) {
 	return false, offset
 }
 
+func deletefromslice(n int, slice []byte) []byte {      //return false if no buffer left?
+   //Slice Tricks: a = append(a[:i], a[i+1:]...) 
+   for x:=0; x<n; x+=1 {
+      slice = append(slice[:0], slice[0+1:]...)
+   }
+   return slice
+}
+
 func outputResult(found1, found2 bool, offset1, offset2 int, fi os.FileInfo) {
    if found1 == false {
       fmt.Fprintln(os.Stderr, "INFO: Byte sequence one not found in file", fi.Name())
@@ -96,22 +95,36 @@ func outputResult(found1, found2 bool, offset1, offset2 int, fi os.FileInfo) {
    }
 }
 
+func moveWindow(buf []byte, byteval *[]byte) (int64, []byte) {
+   start := int64(len(byteval1))
+   copy(buf[:], buf[bfsize-start:])
+   return start, buf
+}
+
 func handleFile(fp *os.File, fi os.FileInfo) {
-   var off int   
-   var windowsize = len(
+
+   var found bool
+   var fileoff int   
+   var start int64
+   buf := make([]byte, bfsize)
+
    for {
-      i, err := fp.Read(buf[windowsize:])
+      i, err := fp.Read(buf[start:])
 		if err != nil && err != io.EOF {
 			fmt.Fprintf(os.Stderr, "ERROR: %v\n", err)
 			return
-		}
-      off+=i
-
-      
-
-      if err == io.EOF {
+		} else if err == io.EOF {
          //we haven't returned so far and so we haven't found our values
          return
+      }
+
+      fileoff+=i
+
+      //only need one found var for first byteval
+      if !found {
+         start, buf = moveWindow(buf, &byteval1)
+      } else {
+         start, buf = moveWindow(buf, &byteval2)
       }
    }  
 }
