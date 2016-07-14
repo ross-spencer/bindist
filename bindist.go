@@ -83,14 +83,15 @@ func outputResult(found1, found2 bool, offset1, offset2 int, fi os.FileInfo) {
    }
 
    if found1 && found2 {
+      var offset = (offset2-offset1)-len(byteval1)
       if size == true && fname == false {
-		   fmt.Fprintf(os.Stdout, "%d, %d\n", (offset2-offset1)-len(byteval1), fi.Size())
+		   fmt.Fprintf(os.Stdout, "%d, %d\n", offset, fi.Size())
       } else if size == true && fname == true {
-		   fmt.Fprintf(os.Stdout, "%d, %d, \"%s\"\n", (offset2-offset1)-len(byteval1), fi.Size(), fi.Name())
+		   fmt.Fprintf(os.Stdout, "%d, %d, \"%s\"\n", offset, fi.Size(), fi.Name())
       } else if fname == true && size == false {
-         fmt.Fprintf(os.Stdout, "%d, \"%s\"\n", (offset2-offset1)-len(byteval1), fi.Name())
+         fmt.Fprintf(os.Stdout, "%d, \"%s\"\n", offset, fi.Name())
       } else {
-         fmt.Fprintln(os.Stdout, (offset2-offset1)-len(byteval1))
+         fmt.Fprintln(os.Stdout, offset)
       }
    }
 }
@@ -103,8 +104,8 @@ func moveWindow(buf []byte, byteval *[]byte) (int64, []byte) {
 
 func handleFile(fp *os.File, fi os.FileInfo) {
 
-   var found bool
-   var fileoff int   
+   var found, found2 bool
+   var fileoff, offset1, offset2 int   
    var start int64
    buf := make([]byte, bfsize)
 
@@ -113,23 +114,44 @@ func handleFile(fp *os.File, fi os.FileInfo) {
 		if err != nil && err != io.EOF {
 			fmt.Fprintf(os.Stderr, "ERROR: %v\n", err)
 			return
-		} else if err == io.EOF {
-         //we haven't returned so far and so we haven't found our values
-         return
-      }
-
+		}
+      
       fileoff+=i
 
       //only need one found var for first byteval
       if !found {
+         if off := bytes.Index(buf, byteval1); off >= 0 {
+            found = true
+            offset1 = fileoff - len(buf[:int(start)+i]) + off
+            start, buf = moveWindow(buf, &byteval2)
+            continue
+         }
          start, buf = moveWindow(buf, &byteval1)
       } else {
+         if off := bytes.Index(buf, byteval2); off >= 0 {
+            found2 = true
+            fmt.Println("fileoff", fileoff)
+            fmt.Println("index found", off)
+            var dataread = int(start) + i
+            fmt.Println("data read", dataread)
+            fmt.Println("index minus data read", fileoff - int(dataread))
+            offset2 = 8 //fileoff - off    //+ dataread
+            break
+         }
          start, buf = moveWindow(buf, &byteval2)
       }
-   }  
+      //must call last to enable last iteration of stream
+      if err == io.EOF {
+         //we haven't returned so far and so we haven't found our values
+         break
+      }
+   }
+   //204746 abc.jpg
+   //4 test.jpg
+   outputResult(found, found2, offset1, offset2, fi)  
 }
 
-func _handleFile(fp *os.File, fi os.FileInfo) {
+/*func _handleFile(fp *os.File, fi os.FileInfo) {
 
    var found1, found2 bool
    var tmpoff, offset1, offset2 int
@@ -172,9 +194,7 @@ func _handleFile(fp *os.File, fi os.FileInfo) {
       //equivalent to ftell() in C
       pos, _ = fp.Seek(0, os.SEEK_CUR) 
    }
-
-   outputResult(found1, found2, offset1, offset2, fi)
-}
+}*/
 
 //callback for walk needs to match the following:
 //type WalkFunc func(path string, info os.FileInfo, err error) error
