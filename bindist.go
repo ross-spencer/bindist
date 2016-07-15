@@ -76,7 +76,7 @@ func deletefromslice(n int, slice []byte) []byte {      //return false if no buf
 }
 
 func outputResult(found1, found2 bool, offset1, offset2 int, fi os.FileInfo) {
-   if found1 == false {
+   /*if found1 == false {
       fmt.Fprintln(os.Stderr, "INFO: Byte sequence one not found in file", fi.Name())
    } else if found2 == false {
       fmt.Fprintln(os.Stderr, "INFO: Byte sequence two not found following byte sequence one", fi.Name())
@@ -93,12 +93,29 @@ func outputResult(found1, found2 bool, offset1, offset2 int, fi os.FileInfo) {
       } else {
          fmt.Fprintln(os.Stdout, offset)
       }
-   }
+   }*/
 }
 
-func moveWindow(buf []byte) (int64, []byte) {
-   start := int64(maxNeedle)
-   copy(buf[:], buf[bfsize-start:])
+func moveWindow(buf []byte, from, to int) (int64, []byte) {
+   var start int64
+   var nullbuffer int    //slice learning todo: delete
+   var buflen int
+
+   if from == 0 && to == 0 {
+      start = int64(maxNeedle)
+      buflen = maxNeedle
+      copy(buf[:], buf[bfsize-start:])
+   } else {
+      start = int64(to)
+      buflen = to - from 
+      copy(buf[:], buf[from:to])
+   }
+
+   nullbuffer = int(bfsize)-buflen
+   for i :=0 ; i < nullbuffer; i++ {
+       buf[i+buflen] = 0
+   } 
+
    return start, buf
 }
 
@@ -110,41 +127,53 @@ func handleFile(fp *os.File, fi os.FileInfo) {
    buf := make([]byte, bfsize)
 
    for {
-      i, err := fp.Read(buf[start:])
+      dataread, err := fp.Read(buf[start:])
 		if err != nil && err != io.EOF {
 			fmt.Fprintf(os.Stderr, "ERROR: %v\n", err)
 			return
 		}
       
-      fileoff+=i
+      fileoff+=dataread    //we'll see how many bytes are read from file
 
-      //only need one found var for first byteval
+      //fmt.Println(fileoff, dataread)
+
       if !found {
+
          if off := bytes.Index(buf, byteval1); off >= 0 {
             found = true
-            offset1 = fileoff - len(buf[:int(start)+i]) + off
-            continue
+
+            //buf[:elements]  gives us a slice of only used values
+            var elementsused = int(start)+dataread     //only interested in used slices
+            offset1 = fileoff - len(buf[:elementsused]) + off
+
+            var copyfrom = off+len(byteval1)         
+            fmt.Println(buf)      
+            fmt.Println(copyfrom, elementsused)      
+            start, buf = moveWindow(buf, copyfrom, elementsused)
+            fmt.Println(buf)
          }
+
       } else {
-         if off := bytes.Index(buf, byteval2); off >= 0 {
-            found2 = true
-            var dataread = int(start) + i
-            fmt.Println(dataread, fileoff, off, start, maxNeedle)
-            offset2 = fileoff - off
-            break
-         }
-         start, buf = moveWindow(buf)
+         fmt.Println("")
+         fmt.Println(buf)
       }
+
+      //fmt.Println(buf)
+      //fmt.Println("\n")
+      //fmt.Println(i)
+
+
       //must call last to enable last iteration of stream
       if err == io.EOF {
          //we haven't returned so far and so we haven't found our values
-         break
+         return
       }
-      start, buf = moveWindow(buf)
+
+      start, buf = moveWindow(buf, 0, 0)
    }
    //204746 abc.jpg
    //4 test.jpg
-   outputResult(found, found2, offset1, offset2, fi)  
+  outputResult(found, found2, offset1, offset2, fi)  
 }
 
 /*func _handleFile(fp *os.File, fi os.FileInfo) {
