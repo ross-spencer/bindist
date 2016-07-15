@@ -82,20 +82,19 @@ func outputResult(found bool, offset1, offset2 int, fi os.FileInfo) {
       fmt.Fprintln(os.Stderr, "INFO: Byte sequence one not found in file", fi.Name())
    } else if offset1 == 0 && offset2 == 0 {
       fmt.Fprintln(os.Stderr, "INFO: Byte sequence two not found following byte sequence one", fi.Name())
-   }
-
-/*   if found1 && found2 {
+   } else {
       var offset = (offset2-offset1)-len(byteval1)
-      if size == true && fname == false {
-		   fmt.Fprintf(os.Stdout, "%d, %d\n", offset, fi.Size())
-      } else if size == true && fname == true {
-		   fmt.Fprintf(os.Stdout, "%d, %d, \"%s\"\n", offset, fi.Size(), fi.Name())
-      } else if fname == true && size == false {
-         fmt.Fprintf(os.Stdout, "%d, \"%s\"\n", offset, fi.Name())
-      } else {
-         fmt.Fprintln(os.Stdout, offset)
+      switch {
+         case size && !fname:
+		      fmt.Fprintf(os.Stdout, "%d, %d\n", offset, fi.Size())
+         case size && fname:
+		      fmt.Fprintf(os.Stdout, "%d, %d, \"%s\"\n", offset, fi.Size(), fi.Name())
+         case fname && !size:
+            fmt.Fprintf(os.Stdout, "%d, \"%s\"\n", offset, fi.Name())
+         default:
+            fmt.Fprintln(os.Stdout, offset)
       }
-   }*/
+   }
 }
 
 func moveWindow(buf []byte, from, to int) (int64, []byte) {
