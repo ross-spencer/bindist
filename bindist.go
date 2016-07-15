@@ -96,8 +96,8 @@ func outputResult(found1, found2 bool, offset1, offset2 int, fi os.FileInfo) {
    }
 }
 
-func moveWindow(buf []byte, byteval *[]byte) (int64, []byte) {
-   start := int64(len(byteval1))
+func moveWindow(buf []byte) (int64, []byte) {
+   start := int64(maxNeedle)
    copy(buf[:], buf[bfsize-start:])
    return start, buf
 }
@@ -123,28 +123,24 @@ func handleFile(fp *os.File, fi os.FileInfo) {
          if off := bytes.Index(buf, byteval1); off >= 0 {
             found = true
             offset1 = fileoff - len(buf[:int(start)+i]) + off
-            start, buf = moveWindow(buf, &byteval2)
             continue
          }
-         start, buf = moveWindow(buf, &byteval1)
       } else {
          if off := bytes.Index(buf, byteval2); off >= 0 {
             found2 = true
-            fmt.Println("fileoff", fileoff)
-            fmt.Println("index found", off)
             var dataread = int(start) + i
-            fmt.Println("data read", dataread)
-            fmt.Println("index minus data read", fileoff - int(dataread))
-            offset2 = 8 //fileoff - off    //+ dataread
+            fmt.Println(dataread, fileoff, off, start, maxNeedle)
+            offset2 = fileoff - off
             break
          }
-         start, buf = moveWindow(buf, &byteval2)
+         start, buf = moveWindow(buf)
       }
       //must call last to enable last iteration of stream
       if err == io.EOF {
          //we haven't returned so far and so we haven't found our values
          break
       }
+      start, buf = moveWindow(buf)
    }
    //204746 abc.jpg
    //4 test.jpg
@@ -236,6 +232,13 @@ func validateHex(magic string) error {
    return nil
 }
 
+func getMaxNeedle() {
+   maxNeedle = len(byteval1) // store length of magic1 or magic2, whichever longer. This will be the length of the tail that we copy to the start of each buffer to cover overlaps.
+   if len(byteval2) > maxNeedle {
+      maxNeedle = len(byteval2)
+   }
+}
+
 func validateArgsAndGo() {
 
    err := validateHex(magic1)
@@ -255,6 +258,7 @@ func validateArgsAndGo() {
    byteval1, _ = hex.DecodeString(magic1)
    byteval2, _ = hex.DecodeString(magic2)
 
+   getMaxNeedle()
    filepath.Walk(file, readFile)
 }
 
