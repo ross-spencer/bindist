@@ -98,25 +98,22 @@ func outputResult(found1, found2 bool, offset1, offset2 int, fi os.FileInfo) {
 
 func moveWindow(buf []byte, from, to int) (int64, []byte) {
    var start int64
-   var nullbuffer int    //slice learning todo: delete
-   var buflen int
+   var nullbuffer, buflen int64    //slice learning todo: delete
 
    if from == 0 && to == 0 {
       start = int64(maxNeedle)
-      buflen = maxNeedle
+      buflen = start
       copy(buf[:], buf[bfsize-start:])
    } else {
-      start = int64(to)
-      buflen = to - from 
+      start = int64(to - from)
+      buflen = start
       copy(buf[:], buf[from:to])
    }
 
-   nullbuffer = int(bfsize)-buflen
-   for i :=0 ; i < nullbuffer; i++ {
+   nullbuffer = bfsize - buflen
+   for i := int64(0) ; i < nullbuffer; i++ {
        buf[i+buflen] = 0
    } 
-
-   fmt.Println("startvalue", start)
 
    return start, buf
 }
@@ -124,7 +121,7 @@ func moveWindow(buf []byte, from, to int) (int64, []byte) {
 func handleFile(fp *os.File, fi os.FileInfo) {
 
    var found, found2 bool
-   var fileoff, offset1, offset2 int   
+   var fileoff, offset1, offset2 int  
    var start int64
    buf := make([]byte, bfsize)
 
@@ -137,53 +134,27 @@ func handleFile(fp *os.File, fi os.FileInfo) {
       
       fileoff+=dataread    //we'll see how many bytes are read from file
 
-      //fmt.Println(fileoff, dataread)
-
       if !found {
 
          if off := bytes.Index(buf, byteval1); off >= 0 {
             found = true
-
             //buf[:elements]  gives us a slice of only used values
             var elementsused = int(start)+dataread     //only interested in used slices
             var copyfrom = off+len(byteval1)  
-
             offset1 = fileoff - len(buf[:elementsused]) + off
-
-       
-            fmt.Println(buf)      
-            fmt.Println(copyfrom, elementsused)      
             start, buf = moveWindow(buf, copyfrom, elementsused)
-            fmt.Println(buf)
-            fmt.Println("start2", start)
-
             continue
          }
 
       } else {
          if off := bytes.Index(buf, byteval2); off >= 0 {
             found2 = true
-            fmt.Println("start, off", start, off)
-            offset2 = fileoff - off
-
-            ccc := int(start)+dataread    //buffer size
-
-            fmt.Println("bbb", ccc)
-
-            //offset2 = fileoff - len(buf[:int(start)+dataread]) + off
-
-            fmt.Println(buf)
-
-            fmt.Println("offf", off)
-            fmt.Println("vvvV", offset1, offset2, dataread, fileoff)
+            //buf[:elements]  gives us a slice of only used values
+            elementsused := int(start)+dataread
+            offset2 = fileoff - len(buf[:elementsused]) + off
             break
          }
       }
-
-      //fmt.Println(buf)
-      //fmt.Println("\n")
-      //fmt.Println(i)
-
 
       //must call last to enable last iteration of stream
       if err == io.EOF {
