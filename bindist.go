@@ -75,14 +75,16 @@ func deletefromslice(n int, slice []byte) []byte {      //return false if no buf
    return slice
 }
 
-func outputResult(found1, found2 bool, offset1, offset2 int, fi os.FileInfo) {
-   if found1 == false {
+func outputResult(found bool, offset1, offset2 int, fi os.FileInfo) {
+   
+   //Have reached end of file without finding both sequences :(
+   if found == false {
       fmt.Fprintln(os.Stderr, "INFO: Byte sequence one not found in file", fi.Name())
-   } else if found2 == false {
+   } else if offset1 == 0 && offset2 == 0 {
       fmt.Fprintln(os.Stderr, "INFO: Byte sequence two not found following byte sequence one", fi.Name())
    }
 
-   if found1 && found2 {
+/*   if found1 && found2 {
       var offset = (offset2-offset1)-len(byteval1)
       if size == true && fname == false {
 		   fmt.Fprintf(os.Stdout, "%d, %d\n", offset, fi.Size())
@@ -93,7 +95,7 @@ func outputResult(found1, found2 bool, offset1, offset2 int, fi os.FileInfo) {
       } else {
          fmt.Fprintln(os.Stdout, offset)
       }
-   }
+   }*/
 }
 
 func moveWindow(buf []byte, from, to int) (int64, []byte) {
@@ -120,7 +122,7 @@ func moveWindow(buf []byte, from, to int) (int64, []byte) {
 
 func handleFile(fp *os.File, fi os.FileInfo) {
 
-   var found, found2 bool
+   var found bool
    var fileoff, offset1, offset2 int  
    var start int64
    buf := make([]byte, bfsize)
@@ -135,7 +137,6 @@ func handleFile(fp *os.File, fi os.FileInfo) {
       fileoff+=dataread    //we'll see how many bytes are read from file
 
       if !found {
-
          if off := bytes.Index(buf, byteval1); off >= 0 {
             found = true
             //buf[:elements]  gives us a slice of only used values
@@ -145,28 +146,25 @@ func handleFile(fp *os.File, fi os.FileInfo) {
             start, buf = moveWindow(buf, copyfrom, elementsused)
             continue
          }
-
       } else {
          if off := bytes.Index(buf, byteval2); off >= 0 {
-            found2 = true
             //buf[:elements]  gives us a slice of only used values
             elementsused := int(start)+dataread
             offset2 = fileoff - len(buf[:elementsused]) + off
-            break
+            outputResult(found, offset1, offset2, fi)
+            return
          }
       }
 
-      //must call last to enable last iteration of stream
+      //must call last to enable last iteration over buffer...
       if err == io.EOF {
          //we haven't returned so far and so we haven't found our values
+         outputResult(found, 0, 0, fi)
          return
       }
 
       start, buf = moveWindow(buf, 0, 0)
-   }
-   //204746 abc.jpg
-   //4 test.jpg
-   outputResult(found, found2, offset1, offset2, fi)  
+   }  
 }
 
 /*func _handleFile(fp *os.File, fi os.FileInfo) {
