@@ -76,7 +76,7 @@ func deletefromslice(n int, slice []byte) []byte {      //return false if no buf
 }
 
 func outputResult(found1, found2 bool, offset1, offset2 int, fi os.FileInfo) {
-   /*if found1 == false {
+   if found1 == false {
       fmt.Fprintln(os.Stderr, "INFO: Byte sequence one not found in file", fi.Name())
    } else if found2 == false {
       fmt.Fprintln(os.Stderr, "INFO: Byte sequence two not found following byte sequence one", fi.Name())
@@ -93,7 +93,7 @@ func outputResult(found1, found2 bool, offset1, offset2 int, fi os.FileInfo) {
       } else {
          fmt.Fprintln(os.Stdout, offset)
       }
-   }*/
+   }
 }
 
 func moveWindow(buf []byte, from, to int) (int64, []byte) {
@@ -115,6 +115,8 @@ func moveWindow(buf []byte, from, to int) (int64, []byte) {
    for i :=0 ; i < nullbuffer; i++ {
        buf[i+buflen] = 0
    } 
+
+   fmt.Println("startvalue", start)
 
    return start, buf
 }
@@ -144,18 +146,38 @@ func handleFile(fp *os.File, fi os.FileInfo) {
 
             //buf[:elements]  gives us a slice of only used values
             var elementsused = int(start)+dataread     //only interested in used slices
+            var copyfrom = off+len(byteval1)  
+
             offset1 = fileoff - len(buf[:elementsused]) + off
 
-            var copyfrom = off+len(byteval1)         
+       
             fmt.Println(buf)      
             fmt.Println(copyfrom, elementsused)      
             start, buf = moveWindow(buf, copyfrom, elementsused)
             fmt.Println(buf)
+            fmt.Println("start2", start)
+
+            continue
          }
 
       } else {
-         fmt.Println("")
-         fmt.Println(buf)
+         if off := bytes.Index(buf, byteval2); off >= 0 {
+            found2 = true
+            fmt.Println("start, off", start, off)
+            offset2 = fileoff - off
+
+            ccc := int(start)+dataread    //buffer size
+
+            fmt.Println("bbb", ccc)
+
+            //offset2 = fileoff - len(buf[:int(start)+dataread]) + off
+
+            fmt.Println(buf)
+
+            fmt.Println("offf", off)
+            fmt.Println("vvvV", offset1, offset2, dataread, fileoff)
+            break
+         }
       }
 
       //fmt.Println(buf)
@@ -173,7 +195,7 @@ func handleFile(fp *os.File, fi os.FileInfo) {
    }
    //204746 abc.jpg
    //4 test.jpg
-  outputResult(found, found2, offset1, offset2, fi)  
+   outputResult(found, found2, offset1, offset2, fi)  
 }
 
 /*func _handleFile(fp *os.File, fi os.FileInfo) {
