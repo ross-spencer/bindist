@@ -83,7 +83,7 @@ func moveWindow(buf []byte, from, to int) (int64, []byte) {
    return start, buf
 }
 
-func handleFile(fp *os.File, fi os.FileInfo) {
+func handleFile(fp *os.File, fi os.FileInfo) (bool, int, int, error) {
 
    var found bool
    var fileoff, offset1, offset2 int  
@@ -94,7 +94,7 @@ func handleFile(fp *os.File, fi os.FileInfo) {
       dataread, err := fp.Read(buf[start:])
 		if err != nil && err != io.EOF {
 			fmt.Fprintf(os.Stderr, "ERROR: %v\n", err)
-			return
+			return found, 0, 0, err    //file read error return
 		}
       
       fileoff+=dataread    //we'll see how many bytes are read from file
@@ -114,15 +114,13 @@ func handleFile(fp *os.File, fi os.FileInfo) {
             //buf[:elements]  gives us a slice of only used values
             elementsused := int(start)+dataread
             offset2 = fileoff - len(buf[:elementsused]) + off
-            outputResult(found, offset1, offset2, fi)
-            return
+            return found, offset1, offset2, nil
          }
       }
       //must call last to enable last iteration over buffer...
       if err == io.EOF {
          //we haven't returned so far and so we haven't found our values
-         outputResult(found, 0, 0, fi)
-         return
+         return found, 0, 0, nil
       }
       start, buf = moveWindow(buf, 0, 0)
    }  
@@ -141,7 +139,10 @@ func readFile (path string, fi os.FileInfo, err error) error {
 
    switch mode := fi.Mode(); {
    case mode.IsRegular():
-      handleFile(f, fi)
+      found, off1, off2, err := handleFile(f, fi)
+      if err == nil {
+         outputResult(found, off1, off2, fi)
+      }
    case mode.IsDir():
       fmt.Fprintln(os.Stderr, "INFO:", fi.Name(), "is a directory.")      
    default: 

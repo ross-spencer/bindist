@@ -1,10 +1,27 @@
 package main
 
+import "os"
+import "strings"
 import "testing"
 
-var ExportContains = contains
+//var ExportContains = contains
+var ExportHandleFile = handleFile
 
-func TestExportContains(t *testing.T) {
+// An instance of FakeFile is returned by RecordingFs.Open method.
+type FakeFile struct {
+   content string
+   current int64
+   r       *strings.Reader
+   f       *os.File
+}
+
+func TestHandleFile(t *testing.T) {
+
+   handleFile(fp *os.File, fi os.FileInfo)
+
+}
+
+/*func TestExportContains(t *testing.T) {
    //n = needle, h = haystack
    var h1 = []byte{0x00, 0x00, 0x00, 0xca, 0xfe, 0xba, 0xbe, 0x00}
    var n1 = []byte{0xca, 0xfe, 0xba, 0xbe}
@@ -49,4 +66,5 @@ func TestExportContains(t *testing.T) {
    if found5 != true && offset5 != 11 {
    	t.Error("Needle not found in haystack when it should have been.")
    }
-}
+
+}*/
