@@ -171,10 +171,20 @@ func validateHex(magic string) error {
 }
 
 func getMaxNeedle() {
-   maxNeedle = len(byteval1) // store length of magic1 or magic2, whichever longer. This will be the length of the tail that we copy to the start of each buffer to cover overlaps.
+   // store length of magic1 or magic2, whichever longer. 
+   //This will be the length of the tail that we copy to the start of each buffer to cover overlaps.
+   maxNeedle = len(byteval1)
    if len(byteval2) > maxNeedle {
       maxNeedle = len(byteval2)
    }
+
+   //handle buffer needle size discovered through stress(?) unit tests
+   if int64(maxNeedle) >= bfsize {
+      //almost impossible scenario... os.Exit(1)?
+      bfsize = int64(maxNeedle+1)
+   } else {
+      maxNeedle = (maxNeedle-1)         
+   }   
 }
 
 func validateArgsAndGo() {
