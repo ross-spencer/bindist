@@ -1,5 +1,6 @@
 package main
 
+import "io"
 import "os"
 import "strings"
 import "testing"
@@ -7,25 +8,13 @@ import "testing"
 //var ExportContains = contains
 var ExportHandleFile = handleFile
 
-// An instance of FakeFile is returned by RecordingFs.Open method.
-type FakeFile struct {
-   content string
-   current int64
-   r       *strings.Reader
-   f       *os.File
-}
 
-func TestHandleFile(t *testing.T) {
+//mock filesystem references (for future):
+//https://talks.golang.org/2012/10things.slide#8
+//https://github.com/mindreframer/golang-stuff/tree/master/github.com/globocom/tsuru/fs
 
-   var content1 = string([]byte{0x00, 0x00, 0x00, 0xca, 0xfe, 0xba, 0xbe, 0x00})
-
-   f := &FakeFile{content: content1}
-
-
-   //
-
-   //found, off1, off2, err := handleFile(fp *os.File, fi os.FileInfo)
-
+func TestExportHandleFile(t *Testing.T) {
+   
 }
 
 /*func TestExportContains(t *testing.T) {
