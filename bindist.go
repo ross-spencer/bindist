@@ -83,7 +83,8 @@ func moveWindow(buf []byte, from, to int) (int64, []byte) {
    return start, buf
 }
 
-func handleFile(fp *os.File, fi os.FileInfo) (bool, int, int, error) {
+//return: found, off1, off2, errors
+func handleFile(fp *os.File) (bool, int, int, error) {
 
    var found bool
    var fileoff, offset1, offset2 int  
@@ -139,7 +140,7 @@ func readFile (path string, fi os.FileInfo, err error) error {
 
    switch mode := fi.Mode(); {
    case mode.IsRegular():
-      found, off1, off2, err := handleFile(f, fi)
+      found, off1, off2, err := handleFile(f)
       if err == nil {
          outputResult(found, off1, off2, fi)
       }

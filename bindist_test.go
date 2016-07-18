@@ -17,7 +17,14 @@ type FakeFile struct {
 
 func TestHandleFile(t *testing.T) {
 
-   handleFile(fp *os.File, fi os.FileInfo)
+   var content1 = string([]byte{0x00, 0x00, 0x00, 0xca, 0xfe, 0xba, 0xbe, 0x00})
+
+   f := &FakeFile{content: content1}
+
+
+   //
+
+   //found, off1, off2, err := handleFile(fp *os.File, fi os.FileInfo)
 
 }
 
