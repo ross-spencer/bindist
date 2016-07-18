@@ -1,66 +1,63 @@
 package main
 
-import "io"
+import "fmt"
 import "os"
-import "strings"
 import "testing"
 
 //var ExportContains = contains
 var ExportHandleFile = handleFile
 
+type moveWindowsTest struct {
+        path      string
+        found     bool
+        expected1 int
+        expected2 int
+}
+
+var moveWindowTests = []moveWindowsTest {
+   {"skeleton-tests/move-window-tests/coffee-one", true, 0, 2}, 
+   {"skeleton-tests/move-window-tests/coffee-two", true, 0, 3},
+   {"skeleton-tests/move-window-tests/coffee-three", true, 0, 4},
+   {"skeleton-tests/move-window-tests/coffee-four", true, 0, 5},
+   {"skeleton-tests/move-window-tests/coffee-five", true, 3, 8},
+}
 
 //mock filesystem references (for future):
 //https://talks.golang.org/2012/10things.slide#8
 //https://github.com/mindreframer/golang-stuff/tree/master/github.com/globocom/tsuru/fs
 
-func TestExportHandleFile(t *Testing.T) {
-   
+func TestExportHandleFile(t *testing.T) {
+
+   //without mocking the filesystem
+   //Alternative negative lookup: if _, err := os.Stat("/path/to/whatever"); os.IsNotExist(err)
+   if _, err := os.Stat("skeleton-tests/move-window-tests"); err == nil {
+
+      byteval1 = []byte{0xC0, 0x1D}          //cold
+      byteval2 = []byte{0xC0, 0xFF, 0xEE}    //coffee
+      bfsize = 4
+
+      for _, expected := range moveWindowTests {
+
+         f, err := os.Open(expected.path)
+         defer f.Close()   //closing the file
+         if err != nil {
+            fmt.Fprintln(os.Stderr, "ERROR:", err)
+            os.Exit(1)  //should only exit if root is null, consider no-exit
+         }
+
+         found, off1, off2, err := ExportHandleFile(f)
+
+         actual := moveWindowsTest{expected.path, found, off1, off2}
+
+         if actual != expected {
+            t.Errorf("FAIL: Got offsets, %v, %d, %d, expected, %v %d, %d", actual.found, actual.expected1, actual.expected2, expected.found, expected.expected1, expected.expected2)
+         }
+      }
+   }
+
+   if _, err := os.Stat("skeleton-tests/jpg"); err == nil {
+      /*...*/
+      // test a range of mock jpg files...
+      /*...*/
+   }  
 }
-
-/*func TestExportContains(t *testing.T) {
-   //n = needle, h = haystack
-   var h1 = []byte{0x00, 0x00, 0x00, 0xca, 0xfe, 0xba, 0xbe, 0x00}
-   var n1 = []byte{0xca, 0xfe, 0xba, 0xbe}
-
-   //small needle 
-   var h2 = []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xab, 0x00, 0x00, 0x00, 0x00}
-   var n2 = []byte{0xab}
-
-   //needle isn't in the haystack
-   var h3 = []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}
-   var n3 = []byte{0xff}
-
-   //needle at beginning of file
-   var h4 = []byte{0xff, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}
-   var n4 = []byte{0xff}
-
-   //needle at end of file
-   var h5 = []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xff}
-   var n5 = []byte{0xff}
-
-   found1, offset1 := ExportContains(n1,h1)
-   if found1 != true && offset1 != 3 {
-   	t.Error("Needle not found in haystack when it should have been.")
-   }
-
-   found2, offset2 := ExportContains(n2,h2)
-   if found2 != true && offset2 != 7 {
-   	t.Error("Needle not found in haystack when it should have been.")
-   }
-
-   found3, offset3 := ExportContains(n3,h3)
-   if found3 != false && offset3 != 0 {
-   	t.Error("Needle found in haystack when it shouldn't have been.")
-   }
-
-   found4, offset4 := ExportContains(n4,h4)
-   if found4 != true && offset4 != 0 {
-   	t.Error("Needle not found in haystack when it should have been.")
-   }
-
-   found5, offset5 := ExportContains(n5,h5)
-   if found5 != true && offset5 != 11 {
-   	t.Error("Needle not found in haystack when it should have been.")
-   }
-
-}*/
