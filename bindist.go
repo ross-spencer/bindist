@@ -13,7 +13,7 @@ import (
    )
 
 var (
-   version string = "v2.0.0-beta"
+   version string = "v2.0.1-beta"
    vers bool
 
 	magic1  string
