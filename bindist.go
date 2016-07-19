@@ -67,23 +67,13 @@ func outputResult(found bool, offset1, offset2 int, fi os.FileInfo) {
 
 func moveWindow(buf []byte, from, to int) (int, []byte) {
    var start int
-   var nullbuffer, buflen int    //slice learning todo: delete
-
    if from == 0 && to == 0 {
       start = maxNeedle
-      buflen = start
       copy(buf[:], buf[bfsize-start:])
    } else {
       start = to - from
-      buflen = start
       copy(buf[:], buf[from:to])
    }
-
-   nullbuffer = bfsize - buflen
-   for i := 0 ; i < nullbuffer; i++ {
-       buf[i+buflen] = 0
-   } 
-
    return start, buf
 }
 
