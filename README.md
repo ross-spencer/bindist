@@ -1,6 +1,8 @@
 # bindist
 
-Calculate distance between two hexadecimal values.
+Calculate distance between two hexadecimal values in a given file. 
+
+Example use case is file format signature development, e.g. https://groups.google.com/forum/#!topic/droid-list/QRQ9LScT8iw 
 
       Usage:  bindist [-magic1 ...] [-magic2 ...] [-file ...]
                       [Optional -size] [Optional -fname]
