@@ -3,8 +3,11 @@
 Calculate distance between two hexadecimal values.
 
       Usage:  bindist [-magic1 ...] [-magic2 ...] [-file ...]
-                     [Optional -size] [Optional -fname]
+                      [Optional -size] [Optional -fname]
+                      [Optional -version]
+
       Output: [CSV] 'offset','size','filename'
+      Output: [STRING] 'bindist version ...'                     
 
         -file string
           	File to find the distance between.
@@ -16,6 +19,8 @@ Calculate distance between two hexadecimal values.
           	Second magic number in a file to search for, no offset, e.g. magic.
         -size
           	[Optional] Return size of file alongsize offset in bytes.
+        -version
+            [Optional] Return version of bindist.
 
 ###TODO
 

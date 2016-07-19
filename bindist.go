@@ -224,8 +224,9 @@ func main() {
       fmt.Fprintln(os.Stderr, "Usage:  bindist [-magic1 ...] [-magic2 ...] [-file ...]")
       fmt.Fprintln(os.Stderr, "                [Optional -size] [Optional -fname]")
       fmt.Fprintln(os.Stderr, "                [Optional -version]")
+      fmt.Fprintln(os.Stderr, "")
       fmt.Fprintln(os.Stderr, "Output: [CSV] 'offset','size','filename'")
-      fmt.Fprintf(os.Stderr, "Output: [STRING] '%s ...'\n", verstring)
+      fmt.Fprintf(os.Stderr, "Output: [STRING] '%s ...'\n\n", verstring)
       flag.Usage()
       os.Exit(0)
    }
