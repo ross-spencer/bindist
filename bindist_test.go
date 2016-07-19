@@ -15,6 +15,25 @@ type moveWindowsTest struct {
         err       error
 }
 
+var bigLittleTests = []moveWindowsTest {
+   {"skeleton-tests/big-little/coffee-ballad-cafe", true, 0, 262, nil}, 
+}
+
+var littleBigTests = []moveWindowsTest {
+   {"skeleton-tests/little-big/cafe-coffee-ballad", true, 0, 262, nil}, 
+}
+
+var handleFileTests = []moveWindowsTest {
+   {"skeleton-tests/jpg/12-byte-jpg", true, 2, 8, nil}, 
+   {"skeleton-tests/jpg/8000-byte-jpg", true, 0, 8002, nil},  
+}
+
+var failureTests = []moveWindowsTest {  
+   {"skeleton-tests/failures/one-only", true, 0, 0, nil},         //first sequence only
+   {"skeleton-tests/failures/neither", false, 0, 0, nil},         //neither sequence 
+   {"skeleton-tests/failures/second-only", false, 0, 0, nil},     //second sequence only
+}
+
 var moveWindowTests = []moveWindowsTest {
    {"skeleton-tests/move-window-tests/coffee-one", true, 0, 2, nil}, 
    {"skeleton-tests/move-window-tests/coffee-two", true, 0, 3, nil},
@@ -27,11 +46,11 @@ var moveWindowTests = []moveWindowsTest {
 //https://talks.golang.org/2012/10things.slide#8
 //https://github.com/mindreframer/golang-stuff/tree/master/github.com/globocom/tsuru/fs
 
-func runHandleFile(bfsize int64, f *os.File, path string) moveWindowsTest {
+func runHandleFile(new_bfsize int64, f *os.File, path string) moveWindowsTest {
 
    f.Seek(0,0)   //allow multiple uses of the function by resetting file pointer
 
-   bfsize = bfsize        //only as big as the needle+1
+   bfsize = new_bfsize        //only as big as the needle+1
    getMaxNeedle()
          
    found, off1, off2, err := ExportHandleFile(f)
@@ -78,12 +97,106 @@ func TestExportHandleFile(t *testing.T) {
             t.Errorf("FAIL: Got offsets, %v, %d, %d, expected, %v %d, %d, bfsize: %d", actual.found, actual.expected1, actual.expected2, expected.found, expected.expected1, expected.expected2, new_bfsize)
          }
 
+         new_bfsize = 2040   //random buffer size, not base2 not relevant
+         actual = runHandleFile(new_bfsize, f, expected.path)
+         if actual != expected {
+            t.Errorf("FAIL: Got offsets, %v, %d, %d, expected, %v %d, %d, bfsize: %d", actual.found, actual.expected1, actual.expected2, expected.found, expected.expected1, expected.expected2, new_bfsize)
+         }
       }
    }
 
    if _, err := os.Stat("skeleton-tests/jpg"); err == nil {
-      /*...*/
-      // test a range of mock jpg files...
-      /*...*/
+
+      /*Just some JPG files to test with easy enough magix*/
+
+      byteval1 = []byte{0xFF, 0xD8}          //cold
+      byteval2 = []byte{0xFF, 0xD9}    //coffee
+      
+      for _, expected := range handleFileTests {
+
+         f, err := os.Open(expected.path)
+         defer f.Close()   //closing the file
+         if err != nil {
+            fmt.Fprintln(os.Stderr, "ERROR:", err)
+            os.Exit(1)  //should only exit if root is null, consider no-exit
+         }
+
+         actual := runHandleFile(bfsize, f, expected.path)
+         if actual != expected {
+            t.Errorf("FAIL: Got offsets, %v, %d, %d, expected, %v %d, %d, bfsize: %d", actual.found, actual.expected1, actual.expected2, expected.found, expected.expected1, expected.expected2, bfsize)
+         }         
+      }
+   }  
+
+   if _, err := os.Stat("skeleton-tests/little-big"); err == nil {
+
+      /*Look for a bigger second sequence*/
+
+      byteval1 = []byte{0xCA, 0xFE}          //cafe
+      byteval2 = []byte{0xC0, 0xFF, 0xEE, 0xBA, 0x11, 0xAD}    //coffee-ballad
+      
+      for _, expected := range littleBigTests {
+
+         f, err := os.Open(expected.path)
+         defer f.Close()   //closing the file
+         if err != nil {
+            fmt.Fprintln(os.Stderr, "ERROR:", err)
+            os.Exit(1)  //should only exit if root is null, consider no-exit
+         }
+
+         var new_bfsize int64 = 50
+         actual := runHandleFile(new_bfsize, f, expected.path)
+         if actual != expected {
+            t.Errorf("FAIL: Got offsets, %v, %d, %d, expected, %v %d, %d, bfsize: %d", actual.found, actual.expected1, actual.expected2, expected.found, expected.expected1, expected.expected2, new_bfsize)
+         }         
+      }
+   }  
+
+   if _, err := os.Stat("skeleton-tests/big-little"); err == nil {
+
+      /*Look for a smaller second sequence*/
+
+      byteval1 = []byte{0xC0, 0xFF, 0xEE, 0xBA, 0x11, 0xAD}    //coffee-ballad
+      byteval2 = []byte{0xCA, 0xFE}          //cafe
+      
+      for _, expected := range bigLittleTests {
+
+         f, err := os.Open(expected.path)
+         defer f.Close()   //closing the file
+         if err != nil {
+            fmt.Fprintln(os.Stderr, "ERROR:", err)
+            os.Exit(1)  //should only exit if root is null, consider no-exit
+         }
+
+         var new_bfsize int64 = 50
+         actual := runHandleFile(new_bfsize, f, expected.path)
+         if actual != expected {
+            t.Errorf("FAIL: Got offsets, %v, %d, %d, expected, %v %d, %d, bfsize: %d", actual.found, actual.expected1, actual.expected2, expected.found, expected.expected1, expected.expected2, new_bfsize)
+         }         
+      }
+   }     
+
+   if _, err := os.Stat("skeleton-tests/failures"); err == nil {
+
+      /*Look for failures*/
+
+      byteval1 = []byte{0xD0, 0x0D, 0x1E}    //coffee-ballad
+      byteval2 = []byte{0xF1, 0x1E}          //cafe
+      
+      for _, expected := range failureTests {
+
+         f, err := os.Open(expected.path)
+         defer f.Close()   //closing the file
+         if err != nil {
+            fmt.Fprintln(os.Stderr, "ERROR:", err)
+            os.Exit(1)  //should only exit if root is null, consider no-exit
+         }
+
+         var new_bfsize int64 = 50
+         actual := runHandleFile(new_bfsize, f, expected.path)
+         if actual != expected {
+            t.Errorf("FAIL: Got offsets, %v, %d, %d, expected, %v %d, %d, bfsize: %d", actual.found, actual.expected1, actual.expected2, expected.found, expected.expected1, expected.expected2, new_bfsize)
+         }         
+      }
    }  
 }
