@@ -6,6 +6,29 @@ import "testing"
 
 //var ExportContains = contains
 var ExportHandleFile = handleFile
+var ExportGetDistance = getDistance 
+
+type offsetTest struct {
+   off1     int
+   off2     int
+   lenByte1 int
+   expected int
+}
+
+//TODO: should we test for failures here too?
+var offsetTests = []offsetTest {
+   {0,262,6,256},
+   {0,262,2,260},
+   {2,8,2,4}, 
+   {0,8002,2,8000},
+   {0,2,2,0},  
+   {0,3,2,1},   
+   {0,4,2,2},  
+   {0,5,2,3}, 
+   {3,8,2,3},
+   {0,14319,2,14317},
+   {2,10,4,4},
+}
 
 type moveWindowsTest struct {
         path      string
@@ -199,4 +222,25 @@ func TestExportHandleFile(t *testing.T) {
          }         
       }
    }  
+}
+
+//create an arbitray byte slice for byteval1 length calc
+func createBytes(length int) []byte {
+   buf := make([]byte, length)
+   var onebyte byte = 0x00
+
+   for i := 0; i < length; i++ {
+      buf[i] = onebyte
+   }
+   return buf
+}
+
+func TestExportGetDistance(t *testing.T) {
+   for _, expected := range offsetTests {
+      byteval1 = createBytes(expected.lenByte1)
+      actual := ExportGetDistance(expected.off1,expected.off2)
+      if actual != expected.expected {
+         t.Errorf("FAIL: Got distance, %d, expected, %d, off1: %d, off2: %d", actual, expected.expected, expected.off1, expected.off2)
+      }
+   }
 }

@@ -39,6 +39,10 @@ func init() {
    flag.BoolVar(&vers, "version", false, "[Optional] Return version of bindist.")
 }
 
+func getDistance(offset1 int, offset2 int) int {
+   return (offset2-offset1)-len(byteval1)
+}
+
 func outputResult(found bool, offset1, offset2 int, fi os.FileInfo) {
    
    //Have reached end of file without finding both sequences :(
@@ -47,16 +51,16 @@ func outputResult(found bool, offset1, offset2 int, fi os.FileInfo) {
    } else if offset1 == 0 && offset2 == 0 {
       fmt.Fprintln(os.Stderr, "INFO: Byte sequence two not found following byte sequence one", fi.Name())
    } else {
-      var offset = (offset2-offset1)-len(byteval1)
+      distance := getDistance(offset1, offset2)
       switch {
          case size && !fname:
-		      fmt.Fprintf(os.Stdout, "%d, %d\n", offset, fi.Size())
+		      fmt.Fprintf(os.Stdout, "%d, %d\n", distance, fi.Size())
          case size && fname:
-		      fmt.Fprintf(os.Stdout, "%d, %d, \"%s\"\n", offset, fi.Size(), fi.Name())
+		      fmt.Fprintf(os.Stdout, "%d, %d, \"%s\"\n", distance, fi.Size(), fi.Name())
          case fname && !size:
-            fmt.Fprintf(os.Stdout, "%d, \"%s\"\n", offset, fi.Name())
+            fmt.Fprintf(os.Stdout, "%d, \"%s\"\n", distance, fi.Name())
          default:
-            fmt.Fprintln(os.Stdout, offset)
+            fmt.Fprintln(os.Stdout, distance)
       }
    }
 }
