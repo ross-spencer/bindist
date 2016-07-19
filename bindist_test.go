@@ -69,7 +69,7 @@ var moveWindowTests = []moveWindowsTest {
 //https://talks.golang.org/2012/10things.slide#8
 //https://github.com/mindreframer/golang-stuff/tree/master/github.com/globocom/tsuru/fs
 
-func runHandleFile(new_bfsize int64, f *os.File, path string) moveWindowsTest {
+func runHandleFile(new_bfsize int, f *os.File, path string) moveWindowsTest {
 
    f.Seek(0,0)   //allow multiple uses of the function by resetting file pointer
 
@@ -102,7 +102,7 @@ func TestExportHandleFile(t *testing.T) {
             os.Exit(1)  //should only exit if root is null, consider no-exit
          }
 
-         var new_bfsize int64 = 4   //one bigger than the needle
+         var new_bfsize int = 4   //one bigger than the needle
          actual := runHandleFile(new_bfsize, f, expected.path)
          if actual != expected {
             t.Errorf("FAIL: Got offsets, %v, %d, %d, expected, %v %d, %d, bfsize: %d", actual.found, actual.expected1, actual.expected2, expected.found, expected.expected1, expected.expected2, new_bfsize)
@@ -167,7 +167,7 @@ func TestExportHandleFile(t *testing.T) {
             os.Exit(1)  //should only exit if root is null, consider no-exit
          }
 
-         var new_bfsize int64 = 50
+         var new_bfsize int = 50
          actual := runHandleFile(new_bfsize, f, expected.path)
          if actual != expected {
             t.Errorf("FAIL: Got offsets, %v, %d, %d, expected, %v %d, %d, bfsize: %d", actual.found, actual.expected1, actual.expected2, expected.found, expected.expected1, expected.expected2, new_bfsize)
@@ -191,7 +191,7 @@ func TestExportHandleFile(t *testing.T) {
             os.Exit(1)  //should only exit if root is null, consider no-exit
          }
 
-         var new_bfsize int64 = 50
+         var new_bfsize int = 50
          actual := runHandleFile(new_bfsize, f, expected.path)
          if actual != expected {
             t.Errorf("FAIL: Got offsets, %v, %d, %d, expected, %v %d, %d, bfsize: %d", actual.found, actual.expected1, actual.expected2, expected.found, expected.expected1, expected.expected2, new_bfsize)
@@ -215,7 +215,7 @@ func TestExportHandleFile(t *testing.T) {
             os.Exit(1)  //should only exit if root is null, consider no-exit
          }
 
-         var new_bfsize int64 = 50
+         var new_bfsize int = 50
          actual := runHandleFile(new_bfsize, f, expected.path)
          if actual != expected {
             t.Errorf("FAIL: Got offsets, %v, %d, %d, expected, %v %d, %d, bfsize: %d", actual.found, actual.expected1, actual.expected2, expected.found, expected.expected1, expected.expected2, new_bfsize)

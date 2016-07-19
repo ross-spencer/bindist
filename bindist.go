@@ -27,7 +27,7 @@ var (
 	maxNeedle int
 
    //window we'll use to search for values
-   bfsize int64 = 2048
+   bfsize int = 2048
 )
 
 func init() {
@@ -65,22 +65,22 @@ func outputResult(found bool, offset1, offset2 int, fi os.FileInfo) {
    }
 }
 
-func moveWindow(buf []byte, from, to int) (int64, []byte) {
-   var start int64
-   var nullbuffer, buflen int64    //slice learning todo: delete
+func moveWindow(buf []byte, from, to int) (int, []byte) {
+   var start int
+   var nullbuffer, buflen int    //slice learning todo: delete
 
    if from == 0 && to == 0 {
-      start = int64(maxNeedle)
+      start = maxNeedle
       buflen = start
       copy(buf[:], buf[bfsize-start:])
    } else {
-      start = int64(to - from)
+      start = to - from
       buflen = start
       copy(buf[:], buf[from:to])
    }
 
    nullbuffer = bfsize - buflen
-   for i := int64(0) ; i < nullbuffer; i++ {
+   for i := 0 ; i < nullbuffer; i++ {
        buf[i+buflen] = 0
    } 
 
@@ -92,7 +92,7 @@ func handleFile(fp *os.File) (bool, int, int, error) {
 
    var found bool
    var fileoff, offset1, offset2 int  
-   var start int64
+   var start int
    buf := make([]byte, bfsize)
 
    for {
@@ -183,11 +183,11 @@ func getMaxNeedle() {
    }
 
    //handle buffer needle size discovered through stress(?) unit tests
-   if int64(maxNeedle) >= bfsize {
+   if maxNeedle >= bfsize {
       //almost impossible scenario... os.Exit(1)?
-      bfsize = int64(maxNeedle+1)
+      bfsize = (maxNeedle+1)
    } else {
-      maxNeedle = (maxNeedle-1)         
+      maxNeedle = (maxNeedle-1)       
    }   
 }
 
