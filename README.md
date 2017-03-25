@@ -28,7 +28,7 @@ Example use case is file format signature development, e.g. https://groups.googl
         -version
             [Optional] Return version of bindist.
 
-### Todo
+### TODO
 
 - Potentially use a graphics library to scatter plot for us.
 - Attempt to enable Linux globbing / stdio
