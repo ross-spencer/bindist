@@ -224,7 +224,7 @@ func TestExportHandleFile(t *testing.T) {
 	}
 }
 
-//create an arbitray byte slice for byteval1 length calc
+//create an arbitrary byte slice for byteval1 length calc
 func createBytes(length int) []byte {
 	buf := make([]byte, length)
 	var onebyte byte = 0x00
