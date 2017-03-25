@@ -1,5 +1,9 @@
 # bindist
 
+[![Build Status](https://travis-ci.org/ross-spencer/bindist.svg?branch=master)](https://travis-ci.org/ross-spencer/bindist)
+[![GoDoc](https://godoc.org/github.com/ross-spencer/bindist?status.svg)](https://godoc.org/github.com/ross-spencer/bindist)
+[![Go Report Card](https://goreportcard.com/badge/github.com/ross-spencer/bindist)](https://goreportcard.com/report/github.com/ross-spencer/bindist)
+
 Calculate distance between two hexadecimal values in a given file. 
 
 Example use case is file format signature development, e.g. https://groups.google.com/forum/#!topic/droid-list/QRQ9LScT8iw 
